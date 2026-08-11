@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>佣金發票處理流程與痛點主幹圖解</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700;800&display=swap');
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #f8fafc;
+        }
+        
+        /* Central Spine Connector Line */
+        .spine-line {
+            position: absolute;
+            left: 24px;
+            top: 40px;
+            bottom: 40px;
+            width: 4px;
+            background: linear-gradient(to bottom, #6366f1, #3b82f6, #06b6d4, #f59e0b, #ef4444, #10b981);
+            border-radius: 9999px;
+            z-index: 0;
+        }
+
+        @media (min-width: 768px) {
+            .spine-line {
+                left: 50%;
+                transform: translateX(-50%);
+            }
+        }
+
+        /* Pulse Animation for Pain Point Badges */
+        .pulse-warning {
+            box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+            animation: pulse-red 2s infinite;
+        }
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+            70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+
+        .node-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .dimmed {
+            opacity: 0.35;
+            filter: grayscale(80%);
+        }
+
+        .highlight-pain {
+            transform: scale(1.02);
+            ring: 3px solid #ef4444;
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased p-4 md:p-8">
+
+    <div class="max-w-6xl mx-auto space-y-8">
+
+        <!-- Header -->
+        <header class="bg-slate-900 text-white p-6 md:p-8 rounded-2xl shadow-xl border border-slate-800 relative overflow-hidden">
+            <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-indigo-600/20 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                <div>
+                    <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight text-white">佣金發票流程梳理</h1>
+                </div>
+
+                <!-- Interactive Filters -->
+                <div class="flex items-center gap-2 bg-slate-800/90 p-2 rounded-xl border border-slate-700 text-sm md:text-base self-stretch md:self-auto justify-center flex-wrap">
+                    <button id="btn-all" onclick="filterView('all')" class="px-4 py-2 rounded-lg bg-indigo-600 text-white font-semibold transition shadow hover:bg-indigo-500">
+                        <i class="fa-solid fa-eye mr-1"></i> 全部流程
+                    </button>
+                    <button id="btn-pains" onclick="filterView('pains')" class="px-4 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 transition">
+                        <i class="fa-solid fa-triangle-exclamation text-rose-400 mr-1"></i> 聚焦三大痛點
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Legend Bar -->
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-4 text-sm md:text-base font-medium text-slate-700">
+            <div class="flex items-center gap-6 flex-wrap">
+                <span class="flex items-center gap-2">
+                    <span class="w-3.5 h-3.5 rounded-full bg-indigo-600"></span> 作業流程主幹
+                </span>
+                <span class="flex items-center gap-2">
+                    <span class="w-3.5 h-3.5 rounded-full bg-amber-500"></span> 複雜比對 / 多對一拆分
+                </span>
+                <span class="flex items-center gap-2">
+                    <span class="w-3.5 h-3.5 rounded-full bg-rose-500"></span> 營運痛點與作業風險
+                </span>
+                <span class="flex items-center gap-2">
+                    <span class="w-3.5 h-3.5 rounded-full bg-emerald-500"></span> 最終審核與會計繳交
+                </span>
+            </div>
+            <div class="text-slate-500 text-sm">
+                <i class="fa-solid fa-circle-info mr-1"></i> 左側為作業流程、右側為旁側痛點對照
+            </div>
+        </div>
+
+        <!-- Main Flowchart Container with Central Spine -->
+        <div class="relative py-4">
+            
+            <!-- Central Spine Line -->
+            <div class="spine-line"></div>
+
+            <div class="space-y-12 relative">
+
+                <!-- Step 1 -->
+                <div class="relative grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12 items-center node-card" id="step-1" data-type="normal">
+                    <!-- Spine Badge -->
+                    <div class="absolute left-6 md:left-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-lg shadow-lg ring-4 ring-white z-10">
+                        1
+                    </div>
+
+                    <!-- Left: Process Node -->
+                    <div class="pl-16 md:pl-0 md:pr-6">
+                        <div class="bg-white p-6 rounded-xl border border-indigo-100 shadow-sm hover:shadow-md transition">
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="text-sm font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-md">Step 01 • 起點</span>
+                                <i class="fa-solid fa-file-invoice-dollar text-indigo-500 text-2xl"></i>
+                            </div>
+                            <h3 class="text-lg md:text-xl font-bold text-slate-800">全額發票已開立</h3>
+                            <p class="text-sm md:text-base text-slate-600 mt-2 leading-relaxed">
+                                公司正式開立全額廣告發票給代理商，業務系統或備忘帳開始產生「對應應收/應付佣金」帳目需求。
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Right: Pain Point Side Callout -->
+                    <div class="pl-16 md:pl-6">
+                        <div class="bg-slate-50 p-5 rounded-xl border border-dashed border-slate-300 text-sm text-slate-600 flex items-start gap-3">
+                            <i class="fa-solid fa-circle-check text-emerald-500 text-base mt-0.5 flex-shrink-0"></i>
+                            <div>
+                                <span class="font-bold text-slate-800 text-base">節點狀態：常態開頭</span>
+                                <p class="mt-1 leading-relaxed">本階段為常態業務開票，起點明確，尚未產生後續跨部門與檔案勾稽之瓶頸。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="relative grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12 items-center node-card" id="step-2" data-type="pain">
+                    <!-- Spine Badge -->
+                    <div class="absolute left-6 md:left-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-lg shadow-lg ring-4 ring-white z-10">
+                        2
+                    </div>
+
+                    <!-- Left: Process Node -->
+                    <div class="pl-16 md:pl-0 md:pr-6">
+                        <div class="bg-white p-6 rounded-xl border border-indigo-100 shadow-sm hover:shadow-md transition">
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="text-sm font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-md">Step 02 • 等待收件</span>
+                                <i class="fa-solid fa-clock text-amber-500 text-2xl"></i>
+                            </div>
+                            <h3 class="text-lg md:text-xl font-bold text-slate-800">等待代理商寄送佣金發票</h3>
+                            <p class="text-sm md:text-base text-slate-600 mt-2 leading-relaxed">
+                                等待外部代理商開立並寄回佣金發票，主要接收管道包含：
+                            </p>
+                            <div class="mt-3 flex flex-wrap gap-2.5">
+                                <span class="inline-flex items-center gap-1.5 text-xs md:text-sm bg-slate-100 text-slate-800 px-3 py-1.5 rounded-md border border-slate-200 font-medium"><i class="fa-solid fa-envelope text-slate-500"></i> 紙本郵寄</span>
+                                <span class="inline-flex items-center gap-1.5 text-xs md:text-sm bg-slate-100 text-slate-800 px-3 py-1.5 rounded-md border border-slate-200 font-medium"><i class="fa-solid fa-at text-slate-500"></i> Email 電子發票</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Pain Point Side Callout -->
+                    <div class="pl-16 md:pl-6">
+                        <div class="bg-rose-50 p-5 rounded-xl border border-rose-200 text-sm text-rose-900 flex items-start gap-3.5 shadow-sm">
+                            <div class="p-2 rounded-lg bg-rose-100 text-rose-700 flex-shrink-0">
+                                <i class="fa-solid fa-triangle-exclamation text-lg"></i>
+                            </div>
+                            <div>
+                                <div class="font-bold text-rose-800 text-base md:text-lg flex items-center gap-2 flex-wrap">
+                                    <span>痛點標示：沒有任何紀錄與進度監控</span>
+                                    <span class="px-2 py-0.5 bg-rose-200 text-rose-800 text-xs rounded-md font-bold">核心痛點</span>
+                                </div>
+                                <p class="mt-1.5 leading-relaxed text-rose-800 text-sm md:text-base">
+                                    無法即時確認「哪些代理商已請過款、什麼時候請的、哪些尚未寄回或曾被退回」。缺乏追蹤機制，完全屬於被動等待。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="relative grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12 items-center node-card" id="step-3" data-type="pain">
+                    <!-- Spine Badge -->
+                    <div class="absolute left-6 md:left-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-lg shadow-lg ring-4 ring-white z-10">
+                        3
+                    </div>
+
+                    <!-- Left: Process Node -->
+                    <div class="pl-16 md:pl-0 md:pr-6">
+                        <div class="bg-white p-6 rounded-xl border border-indigo-100 shadow-sm hover:shadow-md transition">
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="text-sm font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-md">Step 03 • 點收簽收</span>
+                                <i class="fa-solid fa-inbox text-blue-500 text-2xl"></i>
+                            </div>
+                            <h3 class="text-lg md:text-xl font-bold text-slate-800">協辦組收到佣金發票</h3>
+                            <p class="text-sm md:text-base text-slate-600 mt-2 leading-relaxed">
+                                協辦組人員正式接收實體紙本郵件或 Email 夾檔發票，整理後準備進入成本單比對環節。
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Right: Pain Point Side Callout -->
+                    <div class="pl-16 md:pl-6">
+                        <div class="bg-rose-50 p-5 rounded-xl border border-rose-200 text-sm text-rose-900 flex items-start gap-3.5 shadow-sm">
+                            <div class="p-2 rounded-lg bg-rose-100 text-rose-700 flex-shrink-0">
+                                <i class="fa-solid fa-database text-lg"></i>
+                            </div>
+                            <div>
+                                <div class="font-bold text-rose-800 text-base md:text-lg flex items-center gap-2 flex-wrap">
+                                    <span>痛點標示：資料分散且多為人工維護</span>
+                                    <span class="px-2 py-0.5 bg-rose-200 text-rose-800 text-xs rounded-md font-bold">核心痛點</span>
+                                </div>
+                                <p class="mt-1.5 leading-relaxed text-rose-800 text-sm md:text-base">
+                                    資訊散落於發票明細檔、委刊單編碼表與 Y 槽成本單電子檔。多軌資料無統合資料庫，全靠個人人工維護與登記。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 4 (Matching Logic & Complex Relationships) -->
+                <div class="relative grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12 items-start node-card" id="step-4" data-type="pain">
+                    <!-- Spine Badge -->
+                    <div class="absolute left-6 md:left-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-amber-500 text-white flex items-center justify-center font-bold text-lg shadow-lg ring-4 ring-white z-10 mt-2">
+                        4
+                    </div>
+
+                    <!-- Left: Process Node -->
+                    <div class="pl-16 md:pl-0 md:pr-6">
+                        <div class="bg-white p-6 rounded-xl border-2 border-indigo-200 shadow-md transition space-y-4">
+                            <div class="flex justify-between items-start">
+                                <span class="text-sm font-bold text-amber-800 bg-amber-100 px-3 py-1 rounded-md">Step 04 • 核心比對</span>
+                                <i class="fa-solid fa-magnifying-glass-dollar text-amber-600 text-2xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg md:text-xl font-bold text-slate-800">查找 Y 槽成本單與數據核對</h3>
+                                <p class="text-sm md:text-base text-slate-600 mt-2 leading-relaxed">
+                                    於公司 Y 槽目錄搜尋對應成本單，仔細核對發票金額、檢查抬頭與統編等資訊，確認發票與成本單之對應關係。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Pain Point Side Callout (Critical Bottleneck) -->
+                    <div class="pl-16 md:pl-6">
+                        <div class="bg-rose-50 p-6 rounded-xl border-2 border-rose-300 text-sm text-rose-900 space-y-4 shadow-md pulse-warning">
+                            <div class="flex items-center gap-2.5 font-bold text-rose-800 text-base md:text-lg">
+                                <i class="fa-solid fa-triangle-exclamation text-rose-600 text-xl"></i>
+                                <span>痛點標示：對應關係複雜與跨月交接不易</span>
+                            </div>
+                            
+                            <ul class="space-y-2.5 text-rose-800 leading-relaxed text-sm md:text-base list-disc list-inside">
+                                <li>
+                                    <strong class="text-rose-950">多對一全靠人工標註：</strong> 拆分金額手工寫在成本單影本上，複印多張備用，缺乏系統自動扣減機制。
+                                </li>
+                                <li>
+                                    <strong class="text-rose-950">跨月份交接極易出錯：</strong> 若請款跨月或人員異動，接手人員無法掌握過往已請金額與剩餘額度，極易重複請款或計算錯誤。
+                                </li>
+                                <li>
+                                    <strong class="text-rose-950">Y槽檔案搜尋繁瑣：</strong> 需以人工開檔對照名稱、金額與抬頭，耗費龐大行政時間。
+                                </li>
+                            </ul>
+
+                            <div class="bg-white/90 p-3 rounded-lg border border-rose-200 text-xs md:text-sm text-rose-800 flex items-center gap-2">
+                                <i class="fa-solid fa-circle-info text-rose-600 text-base"></i>
+                                <span class="font-medium">此處為全流程中最繁鎖且人為疏失風險最高的作業節點！</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 5: Decision Branching -->
+                <div class="relative grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12 items-start node-card" id="step-5" data-type="pain">
+                    <!-- Spine Badge -->
+                    <div class="absolute left-6 md:left-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-slate-800 text-white flex items-center justify-center font-bold text-lg shadow-lg ring-4 ring-white z-10 mt-2">
+                        5
+                    </div>
+
+                    <!-- Left: Process Node (Decision Branching) -->
+                    <div class="pl-16 md:pl-0 md:pr-6">
+                        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                            <div class="flex justify-between items-start">
+                                <span class="text-sm font-bold text-slate-700 bg-slate-100 px-3 py-1 rounded-md">Step 05 • 審核分流</span>
+                                <i class="fa-solid fa-code-branch text-indigo-500 text-2xl"></i>
+                            </div>
+                            <h3 class="text-lg md:text-xl font-bold text-slate-800">核對結果判定與處置</h3>
+                            
+                            <!-- Branching Paths -->
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
+                                <!-- Rejection Path -->
+                                <div class="bg-rose-50 p-4 rounded-lg border border-rose-200 space-y-2">
+                                    <div class="font-bold text-rose-800 text-sm md:text-base flex items-center gap-1.5">
+                                        <i class="fa-solid fa-xmark-circle text-rose-600"></i> 1. 退回 (若有問題)
+                                    </div>
+                                    <p class="text-xs md:text-sm text-rose-700 leading-normal">
+                                        先與業務確認退回方式：
+                                    </p>
+                                    <ul class="text-xs md:text-sm text-rose-800 space-y-1 list-disc list-inside">
+                                        <li><strong>電子發票：</strong> 線上作廢重開</li>
+                                        <li><strong>紙本發票：</strong> 確認收件人與地址後寄回重開</li>
+                                    </ul>
+                                </div>
+
+                                <!-- Approval Path -->
+                                <div class="bg-emerald-50 p-4 rounded-lg border border-emerald-200 space-y-2">
+                                    <div class="font-bold text-emerald-800 text-sm md:text-base flex items-center gap-1.5">
+                                        <i class="fa-solid fa-check-circle text-emerald-600"></i> 2. 通過 (核對無誤)
+                                    </div>
+                                    <p class="text-xs md:text-sm text-emerald-800 leading-relaxed">
+                                        確認金額、抬頭、統編與成本單全數無誤，進入下一步驟繳交歸檔。
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Pain Point Side Callout -->
+                    <div class="pl-16 md:pl-6">
+                        <div class="bg-rose-50 p-5 rounded-xl border border-rose-200 text-sm text-rose-900 flex items-start gap-3.5 shadow-sm">
+                            <div class="p-2 rounded-lg bg-rose-100 text-rose-700 flex-shrink-0">
+                                <i class="fa-solid fa-rotate-left text-lg"></i>
+                            </div>
+                            <div>
+                                <div class="font-bold text-rose-800 text-base md:text-lg flex items-center gap-2 flex-wrap">
+                                    <span>痛點標示：退回無追蹤與資訊斷層</span>
+                                    <span class="px-2 py-0.5 bg-rose-200 text-rose-800 text-xs rounded-md font-bold">退回風險</span>
+                                </div>
+                                <p class="mt-1.5 leading-relaxed text-rose-800 text-sm md:text-base">
+                                    發票退回後僅靠口頭或 Email 通知業務，缺少系統紀錄退回原因與重開進度，常導致退回發票後續流扣、補開進度失追。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 6: Final Accounting Submission -->
+                <div class="relative grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12 items-center node-card" id="step-6" data-type="normal">
+                    <!-- Spine Badge -->
+                    <div class="absolute left-6 md:left-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-lg shadow-lg ring-4 ring-white z-10">
+                        6
+                    </div>
+
+                    <!-- Left: Process Node -->
+                    <div class="pl-16 md:pl-0 md:pr-6">
+                        <div class="bg-emerald-500 text-white p-6 rounded-xl shadow-lg border border-emerald-600">
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="text-sm font-bold bg-emerald-700/60 text-emerald-100 px-3 py-1 rounded-md">Step 06 • 終點通關</span>
+                                <i class="fa-solid fa-flag-checkered text-emerald-200 text-2xl"></i>
+                            </div>
+                            <h3 class="text-lg md:text-xl font-bold text-white">繳交會計室核銷</h3>
+                            <p class="text-sm md:text-base text-emerald-50 mt-2 leading-relaxed">
+                                將核對無誤之佣金發票與對應成本單（含拆分影本）一併繳交會計室，完成最終請款與入帳流程。
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Right: Process Complete Note -->
+                    <div class="pl-16 md:pl-6">
+                        <div class="bg-emerald-50 p-5 rounded-xl border border-emerald-200 text-sm text-emerald-800 flex items-start gap-3.5">
+                            <i class="fa-solid fa-circle-check text-emerald-600 text-lg mt-0.5 flex-shrink-0"></i>
+                            <div>
+                                <span class="font-bold text-emerald-900 text-base md:text-lg">流程終點：進帳銷帳</span>
+                                <p class="mt-1 leading-relaxed text-emerald-800 text-sm md:text-base">
+                                    資料正式送達會計室。唯前端若能導入系統化勾稽，將大幅減少會計室二次人工查核成本。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Core Pain Points Summary Card Grid -->
+        <div class="bg-slate-900 text-white rounded-2xl p-6 md:p-8 shadow-xl mt-12 space-y-6">
+            <div class="flex items-center gap-3 border-b border-slate-800 pb-4">
+                <div class="p-3 bg-rose-500/20 text-rose-400 rounded-xl">
+                    <i class="fa-solid fa-bug text-2xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-xl md:text-2xl font-bold text-white">三大核心營運痛點總結</h2>
+                    <p class="text-sm text-slate-400 mt-0.5">目前人工流程所面臨的系統性瓶頸與優化切入點</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Pain 1 -->
+                <div class="bg-slate-800/80 p-6 rounded-xl border border-slate-700/80 hover:border-rose-500/50 transition space-y-3">
+                    <div class="flex items-center justify-between text-rose-400 font-bold text-base md:text-lg">
+                        <span>1. 資料分散孤島</span>
+                        <i class="fa-solid fa-database text-xl"></i>
+                    </div>
+                    <p class="text-sm md:text-base text-slate-300 leading-relaxed">
+                        發票明細、委刊單編碼表與 Y 槽成本單電子檔散落各處，且多為人工維護，缺乏統一資料庫進行自動化串接。
+                    </p>
+                </div>
+
+                <!-- Pain 2 -->
+                <div class="bg-slate-800/80 p-6 rounded-xl border border-slate-700/80 hover:border-rose-500/50 transition space-y-3">
+                    <div class="flex items-center justify-between text-rose-400 font-bold text-base md:text-lg">
+                        <span>2. 缺乏請款歷程紀錄</span>
+                        <i class="fa-solid fa-file-circle-xmark text-xl"></i>
+                    </div>
+                    <p class="text-sm md:text-base text-slate-300 leading-relaxed">
+                        沒有系統紀錄，無法即時監控與確認「哪些已請過款、什麼時候請的、哪些被退回重開」，催收與進度查詢均耗時費力。
+                    </p>
+                </div>
+
+                <!-- Pain 3 -->
+                <div class="bg-slate-800/80 p-6 rounded-xl border border-slate-700/80 hover:border-rose-500/50 transition space-y-3">
+                    <div class="flex items-center justify-between text-rose-400 font-bold text-base md:text-lg">
+                        <span>3. 複雜對應與交接難</span>
+                        <i class="fa-solid fa-people-arrows text-xl"></i>
+                    </div>
+                    <p class="text-sm md:text-base text-slate-300 leading-relaxed">
+                        「多對一」分刷對應全靠人工在紙本/影本上記錄金額拆分，跨月份交接或人員離職時，極易出現重複請款或統計錯誤。
+                    </p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Interactive Filter function
+        function filterView(mode) {
+            const allCards = document.querySelectorAll('.node-card');
+            const btnAll = document.getElementById('btn-all');
+            const btnPains = document.getElementById('btn-pains');
+
+            // Reset buttons styling
+            [btnAll, btnPains].forEach(btn => {
+                btn.className = "px-4 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 transition";
+            });
+
+            if (mode === 'all') {
+                btnAll.className = "px-4 py-2 rounded-lg bg-indigo-600 text-white font-semibold transition shadow";
+                allCards.forEach(card => {
+                    card.classList.remove('dimmed', 'highlight-pain');
+                });
+            } else if (mode === 'pains') {
+                btnPains.className = "px-4 py-2 rounded-lg bg-rose-600 text-white font-semibold transition shadow";
+                allCards.forEach(card => {
+                    const type = card.getAttribute('data-type') || '';
+                    if (type.includes('pain')) {
+                        card.classList.remove('dimmed');
+                        card.classList.add('highlight-pain');
+                    } else {
+                        card.classList.add('dimmed');
+                        card.classList.remove('highlight-pain');
+                    }
+                });
+            }
+        }
+
+        // Attach filterView function globally to ensure window scope accessibility
+        window.filterView = filterView;
+    </script>
+</body>
+</html>
