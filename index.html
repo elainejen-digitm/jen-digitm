@@ -189,7 +189,7 @@
                 </div>
 
                 <!-- Step 3 -->
-                <div class="relative grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12 items-center node-card" id="step-3" data-type="pain">
+                <div class="relative grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12 items-center node-card" id="step-3" data-type="normal">
                     <!-- Spine Badge -->
                     <div class="absolute left-6 md:left-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-lg shadow-lg ring-4 ring-white z-10">
                         3
@@ -209,20 +209,13 @@
                         </div>
                     </div>
 
-                    <!-- Right: Pain Point Side Callout -->
+                    <!-- Right: Process Callout -->
                     <div class="pl-16 md:pl-6">
-                        <div class="bg-rose-50 p-5 rounded-xl border border-rose-200 text-sm text-rose-900 flex items-start gap-3.5 shadow-sm">
-                            <div class="p-2 rounded-lg bg-rose-100 text-rose-700 flex-shrink-0">
-                                <i class="fa-solid fa-database text-lg"></i>
-                            </div>
+                        <div class="bg-slate-50 p-5 rounded-xl border border-dashed border-slate-300 text-sm text-slate-600 flex items-start gap-3">
+                            <i class="fa-solid fa-circle-check text-emerald-500 text-base mt-0.5 flex-shrink-0"></i>
                             <div>
-                                <div class="font-bold text-rose-800 text-base md:text-lg flex items-center gap-2 flex-wrap">
-                                    <span>痛點標示：資料分散且多為人工維護</span>
-                                    <span class="px-2 py-0.5 bg-rose-200 text-rose-800 text-xs rounded-md font-bold">核心痛點</span>
-                                </div>
-                                <p class="mt-1.5 leading-relaxed text-rose-800 text-sm md:text-base">
-                                    資訊散落於發票明細檔、委刊單編碼表與 Y 槽成本單電子檔。多軌資料無統合資料庫，全靠個人人工維護與登記。
-                                </p>
+                                <span class="font-bold text-slate-800 text-base">節點狀態：點收整理</span>
+                                <p class="mt-1 leading-relaxed">完成發票簽收與初步彙整，準備進入資料檢索與單據核對階段。</p>
                             </div>
                         </div>
                     </div>
@@ -256,24 +249,24 @@
                         <div class="bg-rose-50 p-6 rounded-xl border-2 border-rose-300 text-sm text-rose-900 space-y-4 shadow-md pulse-warning">
                             <div class="flex items-center gap-2.5 font-bold text-rose-800 text-base md:text-lg">
                                 <i class="fa-solid fa-triangle-exclamation text-rose-600 text-xl"></i>
-                                <span>痛點標示：對應關係複雜與跨月交接不易</span>
+                                <span>痛點標示：資料分散與複雜比對風險</span>
                             </div>
                             
                             <ul class="space-y-2.5 text-rose-800 leading-relaxed text-sm md:text-base list-disc list-inside">
+                                <li>
+                                    <strong class="text-rose-950">多軌資料分散且人工維護：</strong> 資訊散落於發票明細檔、委刊單編碼表與 Y 槽成本單電子檔，核對時需人工跨檔交叉搜尋，缺乏自動串接。
+                                </li>
                                 <li>
                                     <strong class="text-rose-950">多對一全靠人工標註：</strong> 拆分金額手工寫在成本單影本上，複印多張備用，缺乏系統自動扣減機制。
                                 </li>
                                 <li>
                                     <strong class="text-rose-950">跨月份交接極易出錯：</strong> 若請款跨月或人員異動，接手人員無法掌握過往已請金額與剩餘額度，極易重複請款或計算錯誤。
                                 </li>
-                                <li>
-                                    <strong class="text-rose-950">Y槽檔案搜尋繁瑣：</strong> 需以人工開檔對照名稱、金額與抬頭，耗費龐大行政時間。
-                                </li>
                             </ul>
 
                             <div class="bg-white/90 p-3 rounded-lg border border-rose-200 text-xs md:text-sm text-rose-800 flex items-center gap-2">
                                 <i class="fa-solid fa-circle-info text-rose-600 text-base"></i>
-                                <span class="font-medium">此處為全流程中最繁鎖且人為疏失風險最高的作業節點！</span>
+                                <span class="font-medium">此處為全流程中最繁瑣且人為疏失風險最高的作業節點！</span>
                             </div>
                         </div>
                     </div>
