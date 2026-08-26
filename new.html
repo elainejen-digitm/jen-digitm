@@ -384,7 +384,8 @@
     z-index:2;
   }
   .fn-head{ display:flex; gap:8px; }
-  .fn-body{ padding-left:22px; line-height:1.75; }
+  .fn-body{ padding-left:22px; line-height:1.5; display:flex; flex-direction:column; gap:1px; }
+  .fn-line{ }
 
   .footer{
     margin-top:4px;
@@ -467,11 +468,17 @@
         <div class="footnote-list" style="margin-top:14px;">
           <div class="fn-group">
             <div class="fn-head"><span class="mark">＋</span><b>尚未取得建照建案</b></div>
-            <div class="fn-body">一般版位「有限制」，不能購買 VIP、更新包、熱區搶手好案、感興趣建案、智能優選。</div>
+            <div class="fn-body">
+              <div class="fn-line">一般版位「有限制」，不能購買 VIP、更新包、熱區搶手好案、感興趣建案、智能優選。</div>
+            </div>
           </div>
           <div class="fn-group">
             <div class="fn-head"><span class="mark">＋</span><b>尚未備查建案</b></div>
-            <div class="fn-body">可同時購買一般版位（智能優選除外）。<br>智能優選須待曝光佈局包走期結束後才可購買；若未購買曝光佈局包，則不受此限制。</div>
+            <div class="fn-body">
+              <div class="fn-line"><b style="color:var(--seal);">可於預測系統中確認身分，搜尋建案後會出現「未備查建案」欄位，顯示「是」則為尚未備查建案，詳細畫面可參考下方重點 3。</b></div>
+              <div class="fn-line">可同時購買一般版位（智能優選除外）。</div>
+              <div class="fn-line">智能優選須待曝光佈局包走期結束後才可購買；若未購買曝光佈局包，則不受此限制。</div>
+            </div>
           </div>
         </div>
       </section>
