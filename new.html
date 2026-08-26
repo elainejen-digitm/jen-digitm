@@ -353,6 +353,36 @@
   .footnote-list b{ color:var(--ink); font-weight:700; }
   .fn-group{ display:flex; flex-direction:column; gap:2px; }
   .fn-group + .fn-group{ margin-top:10px; padding-top:10px; border-top:1px dashed var(--line); }
+
+  .flow-track{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:10px;
+    margin-bottom:14px;
+  }
+  .flow-node{
+    position:relative;
+    text-align:center;
+    font-size:13.5px;
+    font-weight:700;
+    letter-spacing:1.5px;
+    color:var(--ink);
+    padding:9px 6px;
+    border:1px solid var(--line);
+    border-radius:10px;
+    background:rgba(255,255,255,0.4);
+  }
+  .flow-node:not(:last-child)::after{
+    content:"›";
+    position:absolute;
+    left:calc(100% + 5px);
+    top:50%;
+    transform:translate(-50%,-50%);
+    font-size:16px;
+    font-weight:900;
+    color:var(--gold);
+    z-index:2;
+  }
   .fn-head{ display:flex; gap:8px; }
   .fn-body{ padding-left:22px; line-height:1.75; }
 
@@ -402,14 +432,19 @@
           <div class="sec-num">1</div>
           <div class="sec-title">建案身分總覽</div>
         </div>
+        <div class="flow-track">
+          <div class="flow-node">取得建照</div>
+          <div class="flow-node">申報備查</div>
+          <div class="flow-node">正式開案</div>
+        </div>
         <div class="identities">
           <div class="id-card">
             <div class="tag">身分 A</div>
-            <div class="name">正常建案</div>
-            <div class="status-row"><span>一般版位</span><span class="pill yes">可購買</span></div>
-            <div class="status-row"><span>智能優選</span><span class="pill yes">可購買</span></div>
-            <div class="status-row"><span>曝光佈局包</span><span class="pill no">不開放</span></div>
-            <div class="status-row"><span>導外再行銷</span><span class="pill no">不開放</span></div>
+            <div class="name">尚未取得建照</div>
+            <div class="status-row"><span>一般版位</span><span class="pill limited">有限制</span></div>
+            <div class="status-row"><span>智能優選</span><span class="pill no">不開放</span></div>
+            <div class="status-row"><span>曝光佈局包</span><span class="pill yes">可購買</span></div>
+            <div class="status-row"><span>導外再行銷</span><span class="pill yes">可購買</span></div>
           </div>
           <div class="id-card highlight">
             <div class="tag">身分 B</div>
@@ -421,15 +456,15 @@
           </div>
           <div class="id-card">
             <div class="tag">身分 C</div>
-            <div class="name">尚未取得建照</div>
-            <div class="status-row"><span>一般版位</span><span class="pill limited">有限制</span></div>
-            <div class="status-row"><span>智能優選</span><span class="pill no">不開放</span></div>
-            <div class="status-row"><span>曝光佈局包</span><span class="pill yes">可購買</span></div>
-            <div class="status-row"><span>導外再行銷</span><span class="pill yes">可購買</span></div>
+            <div class="name">正常建案</div>
+            <div class="status-row"><span>一般版位</span><span class="pill yes">可購買</span></div>
+            <div class="status-row"><span>智能優選</span><span class="pill yes">可購買</span></div>
+            <div class="status-row"><span>曝光佈局包</span><span class="pill no">不開放</span></div>
+            <div class="status-row"><span>導外再行銷</span><span class="pill no">不開放</span></div>
           </div>
         </div>
 
-        <div class="footnote-list" style="margin-top:12px;">
+        <div class="footnote-list" style="margin-top:14px;">
           <div class="fn-group">
             <div class="fn-head"><span class="mark">＋</span><b>尚未取得建照建案</b></div>
             <div class="fn-body">一般版位「有限制」，不能購買 VIP、更新包、熱區搶手好案、感興趣建案、智能優選。</div>
