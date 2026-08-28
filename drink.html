@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日常飲料外送指南</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Zen Maru Gothic & Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;800&family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Zen Maru Gothic', 'Plus Jakarta Sans', sans-serif;
+            background-color: #F8F4EC;
+            color: #4A3525;
+        }
+        .cream-card {
+            background-color: #FFFDF9;
+            border: 1.5px solid #EADBCC;
+            box-shadow: 0 4px 14px rgba(110, 80, 50, 0.06);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .cream-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(110, 80, 50, 0.1);
+            border-color: #D9C4AC;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col p-3 sm:p-5">
+
+    <!-- Header & Quick Info Bar -->
+    <header class="max-w-6xl w-full mx-auto mb-3">
+        <div class="cream-card rounded-2xl px-4 py-3 sm:px-5 flex flex-wrap items-center justify-between gap-3 bg-[#FFFDF9]">
+            <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-xl bg-[#EFE0CE] text-[#6E4826] flex items-center justify-center text-2xl shadow-inner border border-[#DFC9AF]">
+                    <i class="fa-solid fa-mug-hot"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl sm:text-3xl font-black text-[#462C18] tracking-tight leading-none">
+                        飲料外送指南
+                    </h1>
+                    <p class="text-sm font-bold text-[#8C7663] mt-1">即時營業時間・外送低消門檻</p>
+                </div>
+            </div>
+
+            <!-- Real-time Clock Badge & Quick Sort -->
+            <div class="flex flex-wrap items-center gap-2 sm:gap-3 ml-auto">
+                <div class="flex items-center bg-[#F3E8D8] px-3.5 py-1.5 rounded-xl border border-[#E4D1BC] text-sm text-[#5C3A1E] font-extrabold">
+                    <span class="w-2.5 h-2.5 rounded-full bg-[#3D613D] animate-ping mr-2"></span>
+                    <span class="mr-1">目前時間</span>
+                    <span id="current-time-display" class="font-mono text-base text-[#462C18] font-black">--:--:--</span>
+                </div>
+
+                <div class="flex items-center gap-1.5 bg-[#FAF4EA] border border-[#E4D1BC] px-3 py-1.5 rounded-xl">
+                    <span class="text-xs sm:text-sm font-bold text-[#8C7663] whitespace-nowrap">排序：</span>
+                    <select id="sort-select" class="text-sm sm:text-base font-black bg-transparent text-[#462C18] focus:outline-none cursor-pointer">
+                        <option value="price-asc" selected>外送門檻 (低 → 高)</option>
+                        <option value="time">開門時間 (早 → 晚)</option>
+                        <option value="price-desc">外送門檻 (高 → 低)</option>
+                        <option value="name">店名排序</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Grid Content -->
+    <main class="max-w-6xl w-full mx-auto flex-grow">
+        <div id="shop-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+            <!-- Dynamic JavaScript Content -->
+        </div>
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 transform translate-y-24 opacity-0 transition-all duration-300 bg-[#462C18] text-[#FFFDF9] text-base font-black py-3 px-5 rounded-2xl shadow-xl flex items-center space-x-2.5 z-50 border border-[#634227]">
+        <i id="toast-icon" class="fa-solid fa-circle-check text-[#FAD25A] text-lg"></i>
+        <span id="toast-msg">已完成操作</span>
+    </div>
+
+    <script>
+        const storesData = [
+            {
+                id: '1',
+                name: '林三茶研所',
+                timeText: '09:50',
+                openHour: 9,
+                openMin: 50,
+                is24h: false,
+                deliveryMin: 350,
+                url: 'https://order.nidin.shop/menu/21144'
+            },
+            {
+                id: '2',
+                name: '清新',
+                timeText: '10:00',
+                openHour: 10,
+                openMin: 0,
+                is24h: false,
+                deliveryMin: 250,
+                url: 'https://order.nidin.shop/menu/17977'
+            },
+            {
+                id: '3',
+                name: '茶聚',
+                timeText: '10:00',
+                openHour: 10,
+                openMin: 0,
+                is24h: false,
+                deliveryMin: 300,
+                url: 'https://order.nidin.shop/menu/28096'
+            },
+            {
+                id: '4',
+                name: '茶湯會',
+                timeText: '10:00',
+                openHour: 10,
+                openMin: 0,
+                is24h: false,
+                deliveryMin: 300,
+                url: 'https://order.nidin.shop/menu/23266'
+            },
+            {
+                id: '5',
+                name: '50嵐',
+                timeText: '10:15',
+                openHour: 10,
+                openMin: 15,
+                is24h: false,
+                deliveryMin: 250,
+                url: 'https://order.nidin.shop/menu/1545'
+            },
+            {
+                id: '6',
+                name: 'CoCo 都可',
+                timeText: '10:30',
+                openHour: 10,
+                openMin: 30,
+                is24h: false,
+                deliveryMin: 300,
+                url: 'https://order.nidin.shop/menu/1049'
+            },
+            {
+                id: '7',
+                name: '迷客夏',
+                timeText: '10:30',
+                openHour: 10,
+                openMin: 30,
+                is24h: false,
+                deliveryMin: 300,
+                url: 'https://order.nidin.shop/menu/21228'
+            },
+            {
+                id: '8',
+                name: '先喝道',
+                timeText: '24HR',
+                openHour: 0,
+                openMin: 0,
+                is24h: true,
+                deliveryMin: 400,
+                url: 'https://order.nidin.shop/menu/24100'
+            }
+        ];
+
+        let currentSort = 'price-asc';
+
+        // 判斷是否營業中
+        function checkIsOpen(store) {
+            if (store.is24h) return true;
+            const now = new Date();
+            const currentMinOfDay = now.getHours() * 60 + now.getMinutes();
+            const openMinOfDay = store.openHour * 60 + store.openMin;
+            const closeMinOfDay = 22 * 60; // 預設 22:00 打烊
+            return currentMinOfDay >= openMinOfDay && currentMinOfDay < closeMinOfDay;
+        }
+
+        // 時鐘即時更新
+        function updateClock() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            const clockEl = document.getElementById('current-time-display');
+            if (clockEl) {
+                clockEl.innerText = `${hours}:${minutes}:${seconds}`;
+            }
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        function renderStores() {
+            const grid = document.getElementById('shop-grid');
+            grid.innerHTML = '';
+
+            let list = [...storesData];
+
+            // 排序邏輯
+            list.sort((a, b) => {
+                if (currentSort === 'time') {
+                    if (a.is24h) return -1;
+                    if (b.is24h) return 1;
+                    return (a.openHour * 60 + a.openMin) - (b.openHour * 60 + b.openMin);
+                } else if (currentSort === 'price-asc') {
+                    return a.deliveryMin - b.deliveryMin;
+                } else if (currentSort === 'price-desc') {
+                    return b.deliveryMin - a.deliveryMin;
+                } else if (currentSort === 'name') {
+                    return a.name.localeCompare(b.name, 'zh-Hant');
+                }
+                return 0;
+            });
+
+            list.forEach(store => {
+                const isOpen = checkIsOpen(store);
+                const card = document.createElement('div');
+                card.className = 'cream-card rounded-2xl p-4 flex flex-col justify-between';
+
+                card.innerHTML = `
+                    <div>
+                        <!-- Header: 店名與營業狀態標籤 -->
+                        <div class="flex items-center justify-between gap-2 mb-3">
+                            <h2 class="text-2xl font-black text-[#462C18] tracking-tight truncate leading-tight" title="${store.name}">
+                                ${store.name}
+                            </h2>
+                            <span class="text-xs font-black px-2.5 py-1 rounded-lg shrink-0 flex items-center gap-1.5 ${
+                                isOpen 
+                                    ? 'bg-[#E2EFE0] text-[#2F5E2F] border border-[#BBDCB8]' 
+                                    : 'bg-[#EFE7DC] text-[#7A6250] border border-[#DFCFC0]'
+                            }">
+                                <span class="w-2 h-2 rounded-full ${isOpen ? 'bg-[#3D613D] animate-pulse' : 'bg-[#998270]'}"></span>
+                                ${isOpen ? '營業中' : '休息中'}
+                            </span>
+                        </div>
+
+                        <!-- 資訊大字卡 -->
+                        <div class="grid grid-cols-2 gap-2 bg-[#F8F2E8] p-3 rounded-xl border border-[#EADCCF] mb-3">
+                            <div>
+                                <span class="text-xs font-bold text-[#8C7663] block">開門時間</span>
+                                <span class="text-xl font-black text-[#462C18] flex items-center gap-1 mt-0.5">
+                                    <i class="fa-regular fa-clock text-[#A47854] text-base"></i>
+                                    ${store.timeText}
+                                </span>
+                            </div>
+                            <div>
+                                <span class="text-xs font-bold text-[#8C7663] block">外送低消</span>
+                                <span class="text-xl font-black text-[#8E4423] flex items-center gap-1 mt-0.5">
+                                    <i class="fa-solid fa-coins text-[#A47854] text-base"></i>
+                                    $${store.deliveryMin}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 操作按鈕 -->
+                    <div class="flex items-center gap-2 pt-1">
+                        <a href="${store.url}" target="_blank" class="flex-1 bg-[#784F2E] hover:bg-[#5C3A1E] text-[#FFFDF9] font-black text-base py-2.5 px-3 rounded-xl text-center shadow-md transition-all flex items-center justify-center gap-2">
+                            <span>線上點餐</span>
+                            <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+                        </a>
+                        <button onclick="copyLink('${store.url}')" class="w-11 h-11 bg-[#F5ECDF] hover:bg-[#EFE2D1] text-[#5C3A1E] border border-[#DFCFC0] rounded-xl flex items-center justify-center text-base transition-all shrink-0" title="複製連結">
+                            <i class="fa-regular fa-copy"></i>
+                        </button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // 複製網址功能
+        function copyLink(url) {
+            const tempInput = document.createElement('input');
+            tempInput.value = url;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+            showToast('點餐網址已複製！');
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-msg');
+            toastMsg.innerText = msg;
+
+            toast.classList.remove('translate-y-24', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-24', 'opacity-0');
+            }, 1800);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('sort-select').addEventListener('change', (e) => {
+                currentSort = e.target.value;
+                renderStores();
+            });
+
+            renderStores();
+        });
+    </script>
+</body>
+</html>
