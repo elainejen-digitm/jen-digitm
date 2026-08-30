@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日常飲料外送指南</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Zen Maru Gothic & Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;800&family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Zen Maru Gothic', 'Plus Jakarta Sans', sans-serif;
+            background-color: #F7F5E8;
+            color: #2A382B;
+        }
+        .cream-card {
+            background-color: #FFFDF8;
+            border: 1.5px solid #E3E7CE;
+            box-shadow: 0 4px 14px rgba(60, 80, 50, 0.05);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .cream-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(60, 80, 50, 0.09);
+            border-color: #C8D6AE;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col p-3 sm:p-5">
+
+    <!-- Header & Quick Info Bar -->
+    <header class="max-w-6xl w-full mx-auto mb-3">
+        <div class="cream-card rounded-2xl px-4 py-3 sm:px-5 flex flex-wrap items-center justify-between gap-3 bg-[#FFFDF8]">
+            <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-xl bg-[#E8EFCF] text-[#3D5A3B] flex items-center justify-center text-2xl shadow-inner border border-[#D5E2B5]">
+                    <i class="fa-solid fa-leaf"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl sm:text-3xl font-black text-[#233522] tracking-tight leading-none">
+                        飲料外送指南
+                    </h1>
+                    <p class="text-sm font-bold text-[#5F735C] mt-1">即時營業時間・外送低消門檻</p>
+                </div>
+            </div>
+
+            <!-- Real-time Clock Badge & Quick Sort -->
+            <div class="flex flex-wrap items-center gap-2 sm:gap-3 ml-auto">
+                <div class="flex items-center bg-[#EBF1D5] px-3.5 py-1.5 rounded-xl border border-[#D4E0B8] text-sm text-[#354D33] font-extrabold">
+                    <span class="w-2.5 h-2.5 rounded-full bg-[#3D5A3B] animate-ping mr-2"></span>
+                    <span class="mr-1">目前時間</span>
+                    <span id="current-time-display" class="font-mono text-base text-[#233522] font-black">--:--:--</span>
+                </div>
+
+                <div class="flex items-center gap-1.5 bg-[#F4F7E6] border border-[#DCE4C5] px-3 py-1.5 rounded-xl">
+                    <span class="text-xs sm:text-sm font-bold text-[#5F735C] whitespace-nowrap">排序：</span>
+                    <select id="sort-select" class="text-sm sm:text-base font-black bg-transparent text-[#233522] focus:outline-none cursor-pointer">
+                        <option value="price-asc" selected>外送門檻 (低 → 高)</option>
+                        <option value="price-desc">外送門檻 (高 → 低)</option>
+                        <option value="time">開門時間 (早 → 晚)</option>
+                        <option value="name">店名排序</option>
+                    </select>
+                </div>
+
+                <!-- Admin Controls -->
+                <div id="admin-actions-container" class="flex items-center gap-2">
+                    <button id="add-shop-btn" onclick="openAddModal()" class="hidden bg-[#4E6E4C] hover:bg-[#3B5739] text-[#FFFDF8] font-black text-sm px-3.5 py-2 rounded-xl flex items-center gap-1.5 shadow-md transition-all active:scale-95">
+                        <i class="fa-solid fa-plus text-xs"></i>
+                        <span>新增店家</span>
+                    </button>
+                    <button id="admin-login-btn" onclick="openLoginModal()" class="bg-[#F0F4DC] hover:bg-[#E5ECC9] text-[#3D5A3B] border border-[#CBD8A9] font-black text-sm px-3 py-2 rounded-xl flex items-center gap-1.5 transition-all">
+                        <i class="fa-solid fa-lock text-xs"></i>
+                        <span>管理員登入</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Grid Content -->
+    <main class="max-w-6xl w-full mx-auto flex-grow">
+        <div id="shop-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+            <!-- Dynamic JavaScript Content -->
+        </div>
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 transform translate-y-24 opacity-0 transition-all duration-300 bg-[#233522] text-[#FFFDF8] text-base font-black py-3 px-5 rounded-2xl shadow-xl flex items-center space-x-2.5 z-50 border border-[#3A5239]">
+        <i id="toast-icon" class="fa-solid fa-circle-check text-[#F5E28B] text-lg"></i>
+        <span id="toast-msg">已完成操作</span>
+    </div>
+
+    <!-- Admin Login Modal -->
+    <div id="login-modal" class="fixed inset-0 bg-[#1D2B1C]/40 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
+        <div class="cream-card max-w-xs w-full rounded-2xl p-5 shadow-2xl relative">
+            <div class="flex items-center justify-between pb-3 mb-3 border-b border-[#E3E7CE]">
+                <h3 class="text-lg font-black text-[#233522] flex items-center gap-2">
+                    <i class="fa-solid fa-key text-[#4E6E4C]"></i>
+                    <span>管理員登入</span>
+                </h3>
+                <button onclick="closeLoginModal()" class="w-7 h-7 rounded-lg bg-[#F0F4DC] hover:bg-[#E5ECC9] text-[#5F735C] flex items-center justify-center text-xs font-bold transition-all">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <form onsubmit="handleAdminLogin(event)" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-bold text-[#5F735C] mb-1">管理密碼</label>
+                    <input type="password" id="admin-password-input" placeholder="請輸入密碼" required class="w-full px-3 py-2 rounded-xl bg-[#F4F7E6] border border-[#DCE4C5] text-[#233522] font-bold focus:outline-none focus:border-[#4E6E4C] transition-all text-sm">
+                </div>
+                <div class="flex items-center gap-2 pt-1">
+                    <button type="button" onclick="closeLoginModal()" class="flex-1 bg-[#F0F4DC] hover:bg-[#E5ECC9] text-[#354D33] font-extrabold text-xs py-2 rounded-xl transition-all">
+                        取消
+                    </button>
+                    <button type="submit" class="flex-1 bg-[#4E6E4C] hover:bg-[#3B5739] text-[#FFFDF8] font-extrabold text-xs py-2 rounded-xl shadow-md transition-all">
+                        登入
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Shop Modal (Add / Edit) -->
+    <div id="shop-modal" class="fixed inset-0 bg-[#1D2B1C]/40 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
+        <div class="cream-card max-w-md w-full rounded-2xl p-5 sm:p-6 shadow-2xl relative">
+            <div class="flex items-center justify-between pb-3 mb-4 border-b border-[#E3E7CE]">
+                <h3 id="modal-title" class="text-xl font-black text-[#233522] flex items-center gap-2">
+                    <i class="fa-solid fa-store text-[#4E6E4C]"></i>
+                    <span>新增飲料店</span>
+                </h3>
+                <button onclick="closeShopModal()" class="w-8 h-8 rounded-xl bg-[#F0F4DC] hover:bg-[#E5ECC9] text-[#5F735C] flex items-center justify-center text-sm font-bold transition-all">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form id="shop-form" onsubmit="handleSaveShop(event)" class="space-y-3.5">
+                <input type="hidden" id="form-shop-id">
+
+                <div>
+                    <label class="block text-xs font-bold text-[#5F735C] mb-1">店家名稱 *</label>
+                    <input type="text" id="form-shop-name" required placeholder="例如：茶詠春" class="w-full px-3.5 py-2.5 rounded-xl bg-[#F4F7E6] border border-[#DCE4C5] text-[#233522] font-bold focus:outline-none focus:border-[#4E6E4C] transition-all text-sm">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-[#5F735C] mb-1">開門時間顯示 *</label>
+                        <input type="text" id="form-shop-timetext" required placeholder="例如 11:00 或 24HR" class="w-full px-3.5 py-2.5 rounded-xl bg-[#F4F7E6] border border-[#DCE4C5] text-[#233522] font-bold focus:outline-none focus:border-[#4E6E4C] transition-all text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-[#5F735C] mb-1">外送低消 (元) *</label>
+                        <input type="number" id="form-shop-delivery" min="0" required placeholder="例如 200" class="w-full px-3.5 py-2.5 rounded-xl bg-[#F4F7E6] border border-[#DCE4C5] text-[#233522] font-bold focus:outline-none focus:border-[#4E6E4C] transition-all text-sm">
+                    </div>
+                </div>
+
+                <div class="p-3 bg-[#F0F4DC] rounded-xl border border-[#DCE4C5] space-y-2">
+                    <div class="flex items-center justify-between">
+                        <label class="text-xs font-bold text-[#354D33] flex items-center gap-1.5 cursor-pointer">
+                            <input type="checkbox" id="form-shop-is24h" onchange="toggle24hInputs()" class="w-4 h-4 rounded text-[#4E6E4C] focus:ring-0 cursor-pointer">
+                            <span>24 小時營業</span>
+                        </label>
+                    </div>
+                    
+                    <div id="time-inputs-container" class="grid grid-cols-2 gap-2 pt-1 border-t border-[#CBD8A9]">
+                        <div>
+                            <span class="block text-[11px] font-bold text-[#5F735C]">開門小時 (0-23)</span>
+                            <input type="number" id="form-shop-hour" min="0" max="23" placeholder="11" class="w-full px-2.5 py-1.5 rounded-lg bg-[#FFFDF8] border border-[#DCE4C5] text-[#233522] font-bold text-xs focus:outline-none focus:border-[#4E6E4C]">
+                        </div>
+                        <div>
+                            <span class="block text-[11px] font-bold text-[#5F735C]">開門分鐘 (0-59)</span>
+                            <input type="number" id="form-shop-min" min="0" max="59" placeholder="0" class="w-full px-2.5 py-1.5 rounded-lg bg-[#FFFDF8] border border-[#DCE4C5] text-[#233522] font-bold text-xs focus:outline-none focus:border-[#4E6E4C]">
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-[#5F735C] mb-1">線上點餐網址 *</label>
+                    <input type="url" id="form-shop-url" required placeholder="https://..." class="w-full px-3.5 py-2.5 rounded-xl bg-[#F4F7E6] border border-[#DCE4C5] text-[#233522] font-bold focus:outline-none focus:border-[#4E6E4C] transition-all text-sm">
+                </div>
+
+                <div class="flex items-center gap-2 pt-2">
+                    <button type="button" onclick="closeShopModal()" class="flex-1 bg-[#F0F4DC] hover:bg-[#E5ECC9] text-[#354D33] font-extrabold text-sm py-2.5 px-4 rounded-xl transition-all">
+                        取消
+                    </button>
+                    <button type="submit" class="flex-1 bg-[#4E6E4C] hover:bg-[#3B5739] text-[#FFFDF8] font-extrabold text-sm py-2.5 px-4 rounded-xl shadow-md transition-all">
+                        儲存店家
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Confirm Modal -->
+    <div id="delete-modal" class="fixed inset-0 bg-[#1D2B1C]/40 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
+        <div class="cream-card max-w-sm w-full rounded-2xl p-5 shadow-2xl relative text-center">
+            <div class="w-12 h-12 bg-[#FCEBE8] text-[#B03E3E] rounded-2xl flex items-center justify-center text-xl mx-auto mb-3 border border-[#F7C6C1]">
+                <i class="fa-solid fa-trash-can"></i>
+            </div>
+            <h3 class="text-lg font-black text-[#233522] mb-1">刪除店家確認</h3>
+            <p id="delete-msg" class="text-sm font-bold text-[#5F735C] mb-5">確定要刪除這家飲料店嗎？</p>
+            <div class="flex items-center gap-2">
+                <button onclick="closeDeleteModal()" class="flex-1 bg-[#F0F4DC] hover:bg-[#E5ECC9] text-[#354D33] font-extrabold text-sm py-2 px-4 rounded-xl transition-all">
+                    取消
+                </button>
+                <button onclick="executeDeleteShop()" class="flex-1 bg-[#B03E3E] hover:bg-[#8C2E2E] text-[#FFFDF8] font-extrabold text-sm py-2 px-4 rounded-xl shadow-md transition-all">
+                    確定刪除
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const defaultStores = [
+            { 
+                id: '1', 
+                name: '茶詠春', 
+                timeText: '11:00', 
+                openHour: 11, 
+                openMin: 0, 
+                is24h: false, 
+                deliveryMin: 200, 
+                url: 'https://order.nidin.shop/menu/19011' 
+            },
+            { id: '2', name: '鶴茶樓', timeText: '10:00', openHour: 10, openMin: 0, is24h: false, deliveryMin: 300, url: 'https://order.nidin.shop/menu/19638' },
+            { id: '3', name: '50嵐', timeText: '11:00', openHour: 11, openMin: 0, is24h: false, deliveryMin: 250, url: 'https://order.nidin.shop/menu/3821' },
+            { id: '4', name: 'UNOCHA烏弄', timeText: '11:00', openHour: 11, openMin: 0, is24h: false, deliveryMin: 350, url: 'https://order.nidin.shop/menu/9733' },
+            { id: '5', name: '一手私藏', timeText: '11:30', openHour: 11, openMin: 30, is24h: false, deliveryMin: 400, url: 'https://order.nidin.shop/menu/20718' },
+            { id: '6', name: 'COMEBUY', timeText: '11:00', openHour: 11, openMin: 0, is24h: false, deliveryMin: 200, url: 'https://order.nidin.shop/menu/1499' },
+            { id: '7', name: 'CoCo都可', timeText: '10:30', openHour: 10, openMin: 30, is24h: false, deliveryMin: 400, url: 'https://order.nidin.shop/menu/1023' },
+            { id: '8', name: '茶湯會', timeText: '11:00', openHour: 11, openMin: 0, is24h: false, deliveryMin: 500, url: 'https://order.nidin.shop/menu/23023' },
+            { id: '9', name: '無飲', timeText: '10:30', openHour: 10, openMin: 30, is24h: false, deliveryMin: 300, url: 'https://order.nidin.shop/menu/22960' },
+            { id: '10', name: '小茶齋', timeText: '10:30', openHour: 10, openMin: 30, is24h: false, deliveryMin: 400, url: 'https://order.nidin.shop/menu/18202' },
+            { id: '11', name: '迷客夏', timeText: '10:00', openHour: 10, openMin: 0, is24h: false, deliveryMin: 350, url: 'https://order.nidin.shop/menu/12921' },
+            { id: '12', name: '龜記正義北店', timeText: '12:00', openHour: 12, openMin: 0, is24h: false, deliveryMin: 450, url: 'https://guiji.doteat.tw/menu?storeId=f8sVMiNl-0000NK2lKZ&showBulletin=1' },
+            { id: '13', name: '龜記新莊幸福店', timeText: '12:00', openHour: 12, openMin: 0, is24h: false, deliveryMin: 550, url: 'https://guiji.doteat.tw/menu?storeId=gLvkNiNl-0000FG2etg&showBulletin=1' }
+        ];
+
+        let storesData = JSON.parse(localStorage.getItem('my_drink_stores_v2')) || defaultStores;
+        let currentSort = 'price-asc';
+        let targetDeleteId = null;
+        let isAdmin = sessionStorage.getItem('drink_admin_session') === 'true';
+
+        function saveStoresToStorage() {
+            localStorage.setItem('my_drink_stores_v2', JSON.stringify(storesData));
+        }
+
+        function updateAdminUI() {
+            const addBtn = document.getElementById('add-shop-btn');
+            const loginBtn = document.getElementById('admin-login-btn');
+
+            if (isAdmin) {
+                addBtn.classList.remove('hidden');
+                loginBtn.innerHTML = '<i class="fa-solid fa-right-from-bracket text-xs"></i><span>退出管理</span>';
+                loginBtn.className = "bg-[#B03E3E] hover:bg-[#8C2E2E] text-[#FFFDF8] font-black text-sm px-3 py-2 rounded-xl flex items-center gap-1.5 shadow-md transition-all";
+                loginBtn.onclick = handleAdminLogout;
+            } else {
+                addBtn.classList.add('hidden');
+                loginBtn.innerHTML = '<i class="fa-solid fa-lock text-xs"></i><span>管理員登入</span>';
+                loginBtn.className = "bg-[#F0F4DC] hover:bg-[#E5ECC9] text-[#3D5A3B] border border-[#CBD8A9] font-black text-sm px-3 py-2 rounded-xl flex items-center gap-1.5 transition-all";
+                loginBtn.onclick = openLoginModal;
+            }
+        }
+
+        function openLoginModal() {
+            document.getElementById('admin-password-input').value = '';
+            document.getElementById('login-modal').classList.remove('hidden');
+        }
+
+        function closeLoginModal() {
+            document.getElementById('login-modal').classList.add('hidden');
+        }
+
+        function handleAdminLogin(e) {
+            e.preventDefault();
+            const password = document.getElementById('admin-password-input').value;
+            if (password === '1234') {
+                isAdmin = true;
+                sessionStorage.setItem('drink_admin_session', 'true');
+                closeLoginModal();
+                updateAdminUI();
+                renderStores();
+                showToast('已登入管理員模式');
+            } else {
+                showToast('密碼錯誤！');
+            }
+        }
+
+        function handleAdminLogout() {
+            isAdmin = false;
+            sessionStorage.removeItem('drink_admin_session');
+            updateAdminUI();
+            renderStores();
+            showToast('已退出管理員模式');
+        }
+
+        function checkIsOpen(store) {
+            if (store.is24h) return true;
+            const now = new Date();
+            const currentMinOfDay = now.getHours() * 60 + now.getMinutes();
+            const openMinOfDay = (store.openHour || 0) * 60 + (store.openMin || 0);
+            const closeMinOfDay = 22 * 60; // 預設 22:00 打烊
+            return currentMinOfDay >= openMinOfDay && currentMinOfDay < closeMinOfDay;
+        }
+
+        // 時鐘即時更新
+        function updateClock() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            const clockEl = document.getElementById('current-time-display');
+            if (clockEl) {
+                clockEl.innerText = `${hours}:${minutes}:${seconds}`;
+            }
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        function renderStores() {
+            const grid = document.getElementById('shop-grid');
+            grid.innerHTML = '';
+
+            let list = [...storesData];
+
+            // 排序邏輯
+            list.sort((a, b) => {
+                if (currentSort === 'time') {
+                    if (a.is24h) return -1;
+                    if (b.is24h) return 1;
+                    return ((a.openHour || 0) * 60 + (a.openMin || 0)) - ((b.openHour || 0) * 60 + (b.openMin || 0));
+                } else if (currentSort === 'price-asc') {
+                    return a.deliveryMin - b.deliveryMin;
+                } else if (currentSort === 'price-desc') {
+                    return b.deliveryMin - a.deliveryMin;
+                } else if (currentSort === 'name') {
+                    return a.name.localeCompare(b.name, 'zh-Hant');
+                }
+                return 0;
+            });
+
+            list.forEach(store => {
+                const isOpen = checkIsOpen(store);
+                const card = document.createElement('div');
+                card.className = 'cream-card rounded-2xl p-4 flex flex-col justify-between';
+
+                const adminActionButtons = isAdmin ? `
+                    <button onclick="openEditModal('${store.id}')" class="w-7 h-7 rounded-lg bg-[#F4F7E6] hover:bg-[#E5ECC9] text-[#3D5A3B] border border-[#DCE4C5] flex items-center justify-center text-xs transition-all" title="編輯店家">
+                        <i class="fa-solid fa-pen"></i>
+                    </button>
+                    <button onclick="confirmDelete('${store.id}')" class="w-7 h-7 rounded-lg bg-[#F4F7E6] hover:bg-[#FCEBE8] text-[#B03E3E] border border-[#DCE4C5] flex items-center justify-center text-xs transition-all" title="刪除店家">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                ` : '';
+
+                card.innerHTML = `
+                    <div>
+                        <!-- Header: 店名與營業狀態標籤 & 操作按鈕 -->
+                        <div class="flex items-center justify-between gap-2 mb-3">
+                            <h2 class="text-2xl font-black text-[#233522] tracking-tight truncate leading-tight" title="${store.name}">
+                                ${store.name}
+                            </h2>
+                            <div class="flex items-center gap-1.5 shrink-0">
+                                <span class="text-xs font-black px-2.5 py-1 rounded-lg flex items-center gap-1.5 ${
+                                    isOpen 
+                                        ? 'bg-[#E3EFE0] text-[#295428] border border-[#B1D8AE]' 
+                                        : 'bg-[#EDEDE2] text-[#697867] border border-[#D5DDD3]'
+                                }">
+                                    <span class="w-2 h-2 rounded-full ${isOpen ? 'bg-[#376635] animate-pulse' : 'bg-[#899887]'}"></span>
+                                    ${isOpen ? '營業中' : '休息中'}
+                                </span>
+                                ${adminActionButtons}
+                            </div>
+                        </div>
+
+                        <!-- 資訊大字卡 -->
+                        <div class="grid grid-cols-2 gap-2 bg-[#F4F7E6] p-3 rounded-xl border border-[#E1E8CD] mb-3">
+                            <div>
+                                <span class="text-xs font-bold text-[#5F735C] block">開門時間</span>
+                                <span class="text-xl font-black text-[#233522] flex items-center gap-1 mt-0.5">
+                                    <i class="fa-regular fa-clock text-[#4E6E4C] text-base"></i>
+                                    ${store.timeText}
+                                </span>
+                            </div>
+                            <div>
+                                <span class="text-xs font-bold text-[#5F735C] block">外送低消</span>
+                                <span class="text-xl font-black text-[#855B21] flex items-center gap-1 mt-0.5">
+                                    <i class="fa-solid fa-coins text-[#C99C38] text-base"></i>
+                                    $${store.deliveryMin}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 操作按鈕 -->
+                    <div class="flex items-center gap-2 pt-1">
+                        <a href="${store.url}" target="_blank" class="flex-1 bg-[#4E6E4C] hover:bg-[#3B5739] text-[#FFFDF8] font-black text-base py-2.5 px-3 rounded-xl text-center shadow-md transition-all flex items-center justify-center gap-2">
+                            <span>線上點餐</span>
+                            <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+                        </a>
+                        <button onclick="copyLink('${store.url}')" class="w-11 h-11 bg-[#F0F4DC] hover:bg-[#E5ECC9] text-[#354D33] border border-[#CBD8A9] rounded-xl flex items-center justify-center text-base transition-all shrink-0" title="複製連結">
+                            <i class="fa-regular fa-copy"></i>
+                        </button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function toggle24hInputs() {
+            const is24h = document.getElementById('form-shop-is24h').checked;
+            const timeContainer = document.getElementById('time-inputs-container');
+            if (is24h) {
+                timeContainer.classList.add('opacity-40', 'pointer-events-none');
+                document.getElementById('form-shop-timetext').value = '24HR';
+            } else {
+                timeContainer.classList.remove('opacity-40', 'pointer-events-none');
+            }
+        }
+
+        function openAddModal() {
+            document.getElementById('modal-title').innerHTML = '<i class="fa-solid fa-store text-[#4E6E4C]"></i><span>新增飲料店</span>';
+            document.getElementById('form-shop-id').value = '';
+            document.getElementById('form-shop-name').value = '';
+            document.getElementById('form-shop-timetext').value = '';
+            document.getElementById('form-shop-delivery').value = '';
+            document.getElementById('form-shop-hour').value = '';
+            document.getElementById('form-shop-min').value = '';
+            document.getElementById('form-shop-url').value = '';
+            document.getElementById('form-shop-is24h').checked = false;
+            toggle24hInputs();
+            document.getElementById('shop-modal').classList.remove('hidden');
+        }
+
+        function openEditModal(id) {
+            const store = storesData.find(s => s.id === id);
+            if (!store) return;
+
+            document.getElementById('modal-title').innerHTML = '<i class="fa-solid fa-pen-to-square text-[#4E6E4C]"></i><span>編輯飲料店</span>';
+            document.getElementById('form-shop-id').value = store.id;
+            document.getElementById('form-shop-name').value = store.name;
+            document.getElementById('form-shop-timetext').value = store.timeText;
+            document.getElementById('form-shop-delivery').value = store.deliveryMin;
+            document.getElementById('form-shop-hour').value = store.openHour !== undefined ? store.openHour : 0;
+            document.getElementById('form-shop-min').value = store.openMin !== undefined ? store.openMin : 0;
+            document.getElementById('form-shop-url').value = store.url;
+            document.getElementById('form-shop-is24h').checked = !!store.is24h;
+            toggle24hInputs();
+            document.getElementById('shop-modal').classList.remove('hidden');
+        }
+
+        function closeShopModal() {
+            document.getElementById('shop-modal').classList.add('hidden');
+        }
+
+        function handleSaveShop(event) {
+            event.preventDefault();
+            const id = document.getElementById('form-shop-id').value;
+            const name = document.getElementById('form-shop-name').value.trim();
+            const timeText = document.getElementById('form-shop-timetext').value.trim();
+            const deliveryMin = parseInt(document.getElementById('form-shop-delivery').value, 10) || 0;
+            const is24h = document.getElementById('form-shop-is24h').checked;
+            const openHour = is24h ? 0 : (parseInt(document.getElementById('form-shop-hour').value, 10) || 0);
+            const openMin = is24h ? 0 : (parseInt(document.getElementById('form-shop-min').value, 10) || 0);
+            const url = document.getElementById('form-shop-url').value.trim();
+
+            if (id) {
+                const index = storesData.findIndex(s => s.id === id);
+                if (index !== -1) {
+                    storesData[index] = { id, name, timeText, openHour, openMin, is24h, deliveryMin, url };
+                    showToast(`已更新「${name}」！`);
+                }
+            } else {
+                const newStore = {
+                    id: Date.now().toString(),
+                    name,
+                    timeText,
+                    openHour,
+                    openMin,
+                    is24h,
+                    deliveryMin,
+                    url
+                };
+                storesData.push(newStore);
+                showToast(`已新增「${name}」！`);
+            }
+
+            saveStoresToStorage();
+            renderStores();
+            closeShopModal();
+        }
+
+        function confirmDelete(id) {
+            const store = storesData.find(s => s.id === id);
+            if (!store) return;
+            targetDeleteId = id;
+            document.getElementById('delete-msg').innerText = `確定要刪除「${store.name}」嗎？刪除後無法恢復。`;
+            document.getElementById('delete-modal').classList.remove('hidden');
+        }
+
+        function closeDeleteModal() {
+            targetDeleteId = null;
+            document.getElementById('delete-modal').classList.add('hidden');
+        }
+
+        function executeDeleteShop() {
+            if (!targetDeleteId) return;
+            const store = storesData.find(s => s.id === targetDeleteId);
+            storesData = storesData.filter(s => s.id !== targetDeleteId);
+            saveStoresToStorage();
+            renderStores();
+            closeDeleteModal();
+            if (store) showToast(`已刪除「${store.name}」`);
+        }
+
+        // 複製網址功能
+        function copyLink(url) {
+            const tempInput = document.createElement('input');
+            tempInput.value = url;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+            showToast('點餐網址已複製！');
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-msg');
+            toastMsg.innerText = msg;
+
+            toast.classList.remove('translate-y-24', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-24', 'opacity-0');
+            }, 1800);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('sort-select').addEventListener('change', (e) => {
+                currentSort = e.target.value;
+                renderStores();
+            });
+
+            updateAdminUI();
+            renderStores();
+        });
+    </script>
+</body>
+</html>
