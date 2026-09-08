@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>佣金進度追蹤看板 - 架構與欄位定義規格書</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap');
+    body {
+      font-family: 'Inter', 'Noto Sans TC', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    .flow-line::after {
+      content: '';
+      position: absolute;
+      right: -16px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 0;
+      height: 0;
+      border-top: 6px solid transparent;
+      border-bottom: 6px solid transparent;
+      border-left: 8px solid #94a3b8;
+    }
+    @media (max-width: 768px) {
+      .flow-line::after {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen">
+
+  <!-- 頂部導航與標題列 -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm backdrop-blur-md bg-white/95">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <div class="flex flex-wrap items-center gap-2 mb-1">
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200 whitespace-nowrap">
+              系統架構 & 規格書 v2.0
+            </span>
+            <span class="text-xs text-slate-500 font-medium whitespace-nowrap">
+              以「分頁4 未銷成本單」為核心作業介面・跨部門資料自動連動
+            </span>
+          </div>
+          <h1 class="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2 whitespace-nowrap">
+            <i class="fa-solid fa-table-columns text-indigo-600"></i>
+            佣金進度追蹤看板規格說明
+          </h1>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
+
+    <!-- 區塊 1: 核心架構與資料流向視覺化 (CANVAS 流程架構) -->
+    <section id="overview" class="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-200 scroll-mt-24">
+      <div class="mb-6">
+        <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+          <i class="fa-solid fa-network-wired text-indigo-500"></i>
+          四層分頁權責劃分與雙向連動拓撲圖
+        </h2>
+        <p class="text-sm text-slate-500 mt-1">
+          清楚界定跨部門資料邊界：<strong class="text-slate-700">分頁 1、2 為他部門既有產出</strong>（直接抓取作為對照資料庫）；<strong class="text-emerald-700">分頁 4 為日常核銷主操作介面</strong>，完成後即刻自動消單，並將銷帳狀態回寫同步至<strong class="text-indigo-700">分頁 3 總母帳</strong>。
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 relative">
+        <!-- 流程節點 1 -->
+        <div class="relative bg-slate-50 rounded-xl p-4 border-2 border-slate-200 flow-line">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold text-blue-700 bg-blue-100/70 px-2 py-0.5 rounded">會計單位產出</span>
+            <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+          </div>
+          <h3 class="font-bold text-slate-800 text-sm mb-1">分頁 1：發票明細(總)</h3>
+          <p class="text-xs text-slate-600 leading-relaxed">外部既定產出表。抓取作為「開立發票資料庫」，提供發票號碼與未稅基準。</p>
+          <div class="mt-3 text-[11px] font-mono text-blue-700 bg-blue-50 px-2 py-1 rounded inline-block">
+            角色：全額發票資料庫 (唯讀)
+          </div>
+        </div>
+
+        <!-- 流程節點 2 -->
+        <div class="relative bg-slate-50 rounded-xl p-4 border-2 border-slate-200 flow-line">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold text-amber-700 bg-amber-100/70 px-2 py-0.5 rounded">行政單位維護</span>
+            <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+          </div>
+          <h3 class="font-bold text-slate-800 text-sm mb-1">分頁 2：簽約名單</h3>
+          <p class="text-xs text-slate-600 leading-relaxed">外部既定合約表。抓取作為「佣金比對庫」，提供各代理商站別退佣比例。</p>
+          <div class="mt-3 text-[11px] font-mono text-amber-700 bg-amber-50 px-2 py-1 rounded inline-block">
+            角色：合約退佣比對字典 (唯讀)
+          </div>
+        </div>
+
+        <!-- 流程節點 3 (歷史總母表) -->
+        <div class="relative bg-indigo-50/40 rounded-xl p-4 border-2 border-indigo-200 flow-line">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded">全案總母帳 / 存檔</span>
+            <span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
+          </div>
+          <h3 class="font-bold text-indigo-950 text-sm mb-1">分頁 3：待銷成本單</h3>
+          <p class="text-xs text-slate-600 leading-relaxed">全案件資料池與完整歷史紀錄。即時接收分頁 4 的銷帳回寫狀態，供隨時查閱全貌。</p>
+          <div class="mt-3 text-[11px] font-mono text-indigo-800 bg-indigo-100/80 px-2 py-1 rounded inline-block">
+            連動：接收分頁4銷帳狀態回寫
+          </div>
+        </div>
+
+        <!-- 流程節點 4 (核心工作區) -->
+        <div class="relative bg-emerald-50/80 rounded-xl p-4 border-2 border-emerald-500 shadow-md">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold text-emerald-800 bg-emerald-200 px-2 py-0.5 rounded flex items-center gap-1">
+              <i class="fa-solid fa-star text-[10px]"></i> 協辦日常主操作介面
+            </span>
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+          </div>
+          <h3 class="font-bold text-emerald-950 text-sm mb-1">分頁 4：未銷成本單</h3>
+          <p class="text-xs text-slate-700 leading-relaxed">協辦主要工作台！即時查看尚未核銷項目，在此勾選後「自動移出消單」並即刻回寫分頁3。</p>
+          <div class="mt-3 text-[11px] font-mono text-emerald-900 bg-emerald-100 px-2 py-1 rounded font-bold inline-block">
+            功能：即時查未銷 ➔ 勾選即消單
+          </div>
+        </div>
+      </div>
+
+      <!-- 互動操作循環機制說明條 (重構為上下分層與全寬 4 步驟排版) -->
+      <div class="mt-6 p-4 rounded-xl bg-gradient-to-r from-emerald-50 via-teal-50 to-indigo-50 border border-emerald-200">
+        <div class="flex flex-wrap items-center gap-2 mb-3 text-xs">
+          <span class="px-2.5 py-1 rounded bg-emerald-600 text-white font-bold whitespace-nowrap shrink-0">核心作業機制</span>
+          <span class="font-medium text-slate-700">協辦日常僅需開啟<strong>「分頁 4 未銷成本單」</strong>處理，四階段自動連動如下：</span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 text-xs font-mono">
+          <div class="flex items-center justify-between bg-white px-3 py-2 rounded-lg border border-slate-200 shadow-2xs">
+            <span class="text-slate-700 whitespace-nowrap font-medium">1. 即時掌握未銷單</span>
+            <span class="text-slate-400 hidden lg:inline font-sans text-xs">➔</span>
+          </div>
+          <div class="flex items-center justify-between bg-white px-3 py-2 rounded-lg border border-emerald-400 shadow-2xs">
+            <span class="text-emerald-700 font-bold whitespace-nowrap">2. 核對後勾選 [已銷帳]</span>
+            <span class="text-slate-400 hidden lg:inline font-sans text-xs">➔</span>
+          </div>
+          <div class="flex items-center justify-between bg-white px-3 py-2 rounded-lg border border-slate-200 shadow-2xs">
+            <span class="text-slate-700 whitespace-nowrap font-medium">3. 該列自動移出消單</span>
+            <span class="text-slate-400 hidden lg:inline font-sans text-xs">➔</span>
+          </div>
+          <div class="flex items-center bg-indigo-100 px-3 py-2 rounded-lg border border-indigo-300 shadow-2xs">
+            <span class="text-indigo-900 font-bold whitespace-nowrap">4. 分頁3同步顯示 [已銷帳]</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 區塊 2: 各分頁欄位與邏輯定義 -->
+    <div class="space-y-8">
+
+      <!-- 分頁 1 (精簡呈現) -->
+      <section id="sheet1" class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden scroll-mt-24">
+        <div class="bg-gradient-to-r from-blue-50 to-white px-6 py-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold px-2 py-0.5 rounded bg-blue-600 text-white">分頁 1</span>
+              <h3 class="text-base font-bold text-slate-900">發票明細 (總)</h3>
+              <span class="text-xs text-slate-500">會計單位既定產出・直接抓取作為對照資料庫</span>
+            </div>
+          </div>
+          <span class="text-xs bg-blue-100 text-blue-900 px-2.5 py-1 rounded-full font-semibold border border-blue-200 self-start sm:self-auto">
+            全額發票資料庫 (唯讀參照)
+          </span>
+        </div>
+
+        <div class="p-5">
+          <p class="text-xs text-slate-600 mb-3 leading-relaxed">
+            此分頁由<strong>會計單位定期產出</strong>，包含我方開立之全額發票明細與未稅銷售額。協辦系統直接讀取此表作為分頁 3 的原始基礎資料庫，無須人工重複建檔。
+          </p>
+          <div>
+            <span class="text-xs font-bold text-slate-700 block mb-2">涵蓋欄位一覽（共 12 欄）：</span>
+            <div class="flex flex-wrap gap-2">
+              <span class="px-2.5 py-1 rounded-lg text-xs bg-slate-100 text-slate-700 border border-slate-200 font-medium">發票開立日</span>
+              <span class="px-2.5 py-1 rounded-lg text-xs bg-slate-100 text-slate-700 border border-slate-200 font-medium">序號</span>
+              <span class="px-2.5 py-1 rounded-lg text-xs bg-slate-100 text-slate-700 border border-slate-200 font-medium">統一編號</span>
+              <span class="px-2.5 py-1 rounded-lg text-xs bg-slate-100 text-slate-700 border border-slate-200 font-medium">公司名稱</span>
+              <span class="px-2.5 py-1 rounded-lg text-xs bg-blue-50 text-blue-800 border border-blue-200 font-semibold">發票編號 (主鍵)</span>
+              <span class="px-2.5 py-1 rounded-lg text-xs bg-slate-100 text-slate-700 border border-slate-200 font-medium">委刊單編號 (對應編碼)</span>
+              <span class="px-2.5 py-1 rounded-lg text-xs bg-slate-100 text-slate-700 border border-slate-200 font-medium">走期與案名</span>
+              <span class="px-2.5 py-1 rounded-lg text-xs bg-slate-100 text-slate-700 border border-slate-200 font-medium">數量</span>
+              <span class="px-2.5 py-1 rounded-lg text-xs bg-slate-100 text-slate-700 border border-slate-200 font-medium">發票金額 (含稅)</span>
+              <span class="px-2.5 py-1 rounded-lg text-xs bg-indigo-50 text-indigo-800 border border-indigo-200 font-semibold">金額 (未稅，佣金計算母數)</span>
+              <span class="px-2.5 py-1 rounded-lg text-xs bg-slate-100 text-slate-700 border border-slate-200 font-medium">稅額</span>
+              <span class="px-2.5 py-1 rounded-lg text-xs bg-slate-100 text-slate-700 border border-slate-200 font-medium">業務</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 分頁 2 (精簡呈現) -->
+      <section id="sheet2" class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden scroll-mt-24">
+        <div class="bg-gradient-to-r from-amber-50 to-white px-6 py-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold px-2 py-0.5 rounded bg-amber-600 text-white">分頁 2</span>
+              <h3 class="text-base font-bold text-slate-900">簽約名單</h3>
+              <span class="text-xs text-slate-500">行政單位維護・合約佣金比率字典庫</span>
+            </div>
+          </div>
+          <span class="text-xs bg-amber-100 text-amber-900 px-2.5 py-1 rounded-full font-semibold border border-amber-200 self-start sm:self-auto">
+            合約退佣比對庫 (唯讀比對)
+          </span>
+        </div>
+
+        <div class="p-5">
+          <p class="text-xs text-slate-600 mb-3 leading-relaxed">
+            此分頁由<strong>行政單位維護</strong>，完整記載各代理商年度合約簽訂之佣金成數與付款條件。作為系統依據「公司名稱」自動查詢對應退佣比率的參照字典。
+          </p>
+          <div>
+            <span class="text-xs font-bold text-slate-700 block mb-2">涵蓋欄位一覽（共 8 欄）：</span>
+            <div class="flex flex-wrap gap-2">
+              <span class="px-2.5 py-1 rounded-lg text-xs bg-amber-50 text-amber-900 border border-amber-300 font-semibold">公司名稱 (比對鍵值)</span>
+              <span class="px-2.5 py-1 rounded-lg text-xs bg-slate-100 text-slate-700 border border-slate-200 font-medium">簽署可銷售之站台</span>
+              <span class="px-2.5 py-1 rounded-lg text-xs bg-slate-100 text-slate-700 border border-slate-200 font-medium">站內廣告佣金%數</span>
+              <span class="px-2.5 py-1 rounded-lg text-xs bg-slate-100 text-slate-700 border border-slate-200 font-medium">站內特案廣告佣金%數</span>
+              <span class="px-2.5 py-1 rounded-lg text-xs bg-slate-100 text-slate-700 border border-slate-200 font-medium">站外廣告、特案佣金%數</span>
+              <span class="px-2.5 py-1 rounded-lg text-xs bg-slate-100 text-slate-700 border border-slate-200 font-medium">合約期間</span>
+              <span class="px-2.5 py-1 rounded-lg text-xs bg-slate-100 text-slate-700 border border-slate-200 font-medium">付款方式</span>
+              <span class="px-2.5 py-1 rounded-lg text-xs bg-slate-100 text-slate-700 border border-slate-200 font-medium">合約延展</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 分頁 3 (總母帳 / 狀態存檔區) -->
+      <section id="sheet3" class="bg-white rounded-2xl shadow-sm border border-indigo-200 overflow-hidden scroll-mt-24">
+        <div class="bg-gradient-to-r from-indigo-50 via-slate-50 to-white px-6 py-4 border-b border-indigo-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold px-2 py-0.5 rounded bg-indigo-700 text-white">分頁 3</span>
+              <h3 class="text-lg font-bold text-indigo-950">待銷成本單 (全案總母帳 / 完整歷史存檔)</h3>
+            </div>
+            <p class="text-xs text-slate-500 mt-0.5">定位：【全案存檔母帳】彙整所有案件歷史紀錄，即時接收「分頁 4」核銷狀態回寫，呈現已銷與未銷全貌</p>
+          </div>
+          <span class="text-xs bg-indigo-100 text-indigo-900 px-3 py-1 rounded-full font-semibold border border-indigo-200 self-start sm:self-auto">
+            功能定位：總庫存檔 ＆ 接收分頁4回寫
+          </span>
+        </div>
+
+        <div class="p-6 space-y-6">
+
+          <!-- 分頁1直接帶入的欄位整合區 (含編碼) -->
+          <div class="bg-slate-50 rounded-xl p-4 border border-slate-200">
+            <div class="flex items-center gap-2 mb-2">
+              <i class="fa-solid fa-cloud-arrow-down text-blue-600 text-sm"></i>
+              <h4 class="text-xs font-bold text-slate-800">由分頁 1（會計發票明細）直接帶入之欄位（免重複輸入）：</h4>
+            </div>
+            <p class="text-xs text-slate-500 mb-3">以下欄位直接連動分頁 1 外部資料庫，包含對應之「編碼」亦同步自會計資料直接帶入：</p>
+            <div class="flex flex-wrap gap-2 text-xs">
+              <span class="px-2.5 py-1 rounded bg-white text-slate-700 border border-slate-200 font-medium">發票開立日</span>
+              <span class="px-2.5 py-1 rounded bg-white text-slate-700 border border-slate-200 font-medium">公司名稱</span>
+              <span class="px-2.5 py-1 rounded bg-white text-slate-700 border border-slate-200 font-medium">發票編號</span>
+              <span class="px-2.5 py-1 rounded bg-blue-50 text-blue-800 border border-blue-200 font-bold">編碼</span>
+              <span class="px-2.5 py-1 rounded bg-white text-slate-700 border border-slate-200 font-medium">走期與案名</span>
+              <span class="px-2.5 py-1 rounded bg-indigo-50 text-indigo-800 border border-indigo-200 font-bold">發票金額 (未稅基準)</span>
+              <span class="px-2.5 py-1 rounded bg-white text-slate-700 border border-slate-200 font-medium">業務</span>
+            </div>
+          </div>
+
+          <!-- 分頁3核心邏輯欄位 (著重說明) -->
+          <div>
+            <h4 class="text-xs font-bold text-slate-800 mb-3 flex items-center gap-1.5">
+              <i class="fa-solid fa-sliders text-indigo-600"></i> 分頁 3 核心運算與狀態欄位詳細定義：
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+              <!-- 已銷帳 (連動回寫欄) -->
+              <div class="border-2 border-indigo-300 rounded-xl p-4 bg-indigo-50/40 lg:col-span-3">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-arrows-spin text-indigo-700 text-lg"></i>
+                    <h4 class="font-bold text-indigo-950 text-sm">已銷帳 (雙向同步狀態顯示)</h4>
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-200 text-indigo-900">接收分頁4回寫</span>
+                  </div>
+                  <span class="text-xs text-indigo-800 font-mono font-semibold">TRUE (已銷帳) / FALSE (待銷核銷中)</span>
+                </div>
+                <p class="text-xs text-slate-600 mt-2 leading-relaxed">
+                  協辦人員在「分頁 4 未銷成本單」主介面勾選完成後，系統<strong class="text-indigo-900">自動即時回寫更新至此</strong>。分頁 3 永遠保留全專案之完整母帳，方便主管與協辦隨時調閱歷史結案全貌。
+                </p>
+              </div>
+
+              <!-- 傭金%數 -->
+              <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-2xs">
+                <div class="flex items-center justify-between mb-1.5">
+                  <h4 class="font-bold text-slate-800 text-sm">傭金%數</h4>
+                  <span class="text-[10px] font-semibold px-2 py-0.5 rounded bg-amber-100 text-amber-900">分頁2比對帶入</span>
+                </div>
+                <p class="text-xs text-slate-600 leading-relaxed">
+                  系統依據「公司名稱」，自動對照分頁 2（行政簽約名單）中約定之退佣比例帶入（如 15%、20%）。
+                </p>
+              </div>
+
+              <!-- 傭金發票金額 -->
+              <div class="border border-indigo-200 rounded-xl p-4 bg-indigo-50/30 shadow-2xs">
+                <div class="flex items-center justify-between mb-1.5">
+                  <h4 class="font-bold text-indigo-950 text-sm">傭金發票金額</h4>
+                  <span class="text-[10px] font-semibold px-2 py-0.5 rounded bg-indigo-200 text-indigo-900">公式自動計算</span>
+                </div>
+                <p class="text-xs text-slate-700 leading-relaxed">
+                  計算公式：<code class="text-indigo-800 font-mono font-semibold">發票金額(未稅) * 傭金%數</code>。用於核對代理商開來之佣金發票未稅金額是否正確。
+                </p>
+              </div>
+
+              <!-- 支票/匯款金額 -->
+              <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-2xs">
+                <div class="flex items-center justify-between mb-1.5">
+                  <h4 class="font-bold text-slate-800 text-sm">支票/匯款金額</h4>
+                  <span class="text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-700">金流記錄</span>
+                </div>
+                <p class="text-xs text-slate-600 leading-relaxed">
+                  記錄代理商實付金額。若合約約定預扣佣金，則為扣除佣金後淨額；若全額支付則為全額，可依支票紀錄或金流憑證登記。
+                </p>
+              </div>
+
+              <!-- 備註 (接收分頁4銷帳履歷) -->
+              <div class="border border-indigo-200 rounded-xl p-4 bg-indigo-50/40 lg:col-span-3">
+                <div class="flex items-center justify-between mb-1.5">
+                  <h4 class="font-bold text-indigo-950 text-sm">備註 (L 欄)</h4>
+                  <span class="text-[10px] font-semibold px-2 py-0.5 rounded bg-indigo-200 text-indigo-900">分頁4銷帳自動回寫</span>
+                </div>
+                <p class="text-xs text-slate-700 leading-relaxed">
+                  主要用以<strong>完整顯示由分頁 4 彈窗銷帳作業後自動帶回的銷帳履歷資訊</strong>。例如：已銷帳之發票號碼、銷帳日期、實收金額，或拆單時之「部分銷帳履歷」、一張發票多筆核銷時之「(併請) 已銷帳履歷」，完整留存稽核軌跡。
+                </p>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- 分頁 4 (核心操作介面) -->
+      <section id="sheet4" class="bg-white rounded-2xl shadow-md border-2 border-emerald-500 overflow-hidden ring-2 ring-emerald-100 scroll-mt-24">
+        <div class="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 px-6 py-5 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold px-2.5 py-0.5 rounded bg-white text-emerald-800 shadow-sm flex items-center gap-1">
+                <i class="fa-solid fa-star text-amber-500"></i> 分頁 4 (主要操作介面)
+              </span>
+              <h3 class="text-xl font-bold tracking-tight">未銷成本單 (協辦作業主戰場)</h3>
+            </div>
+            <p class="text-xs text-emerald-100 mt-1">協辦人員日常唯一定位與操作頁面！所有內容由分頁 3 帶入，即時查看尚未銷帳項目並執行消單</p>
+          </div>
+          <span class="text-xs bg-emerald-900/40 text-emerald-100 px-3.5 py-1.5 rounded-full font-bold border border-emerald-400/30 self-start sm:self-auto flex items-center gap-1.5">
+            <i class="fa-solid fa-bolt text-amber-300"></i> 即時查未銷 ＆ 勾選即消單
+          </span>
+        </div>
+
+        <div class="p-6 space-y-6">
+
+          <!-- 核心功能說明大卡片 -->
+          <div class="bg-gradient-to-br from-emerald-50/90 to-teal-50/50 rounded-xl p-5 border border-emerald-200">
+            <h4 class="font-bold text-emerald-950 text-base mb-2 flex items-center gap-2">
+              <i class="fa-solid fa-bullseye text-emerald-600"></i>
+              主要功能與操作流程：專注當前待銷清單，勾選即完成銷帳
+            </h4>
+            <p class="text-xs text-slate-600 mb-4 leading-relaxed">
+              <strong>分頁 4 所有欄位內容均完整自動自「分頁 3 待銷成本單」帶入</strong>（無須重複說明與建檔）。它的核心使命是作為協辦每日零干擾的動態工作看板：
+            </p>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+              <div class="bg-white p-4 rounded-xl border border-emerald-100 shadow-2xs">
+                <div class="font-bold text-emerald-800 mb-1.5 flex items-center gap-2">
+                  <span class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 inline-flex items-center justify-center text-xs font-bold">1</span>
+                  即時查看未銷項目
+                </div>
+                <p class="text-slate-600 leading-relaxed">
+                  系統自動篩選出<strong>【已銷帳】欄位尚未核取（FALSE）</strong>的全部項目。協辦每天只需打開本頁，即時掌握所有當前待處理款項，絕無雜訊。
+                </p>
+              </div>
+
+              <div class="bg-white p-4 rounded-xl border border-emerald-100 shadow-2xs">
+                <div class="font-bold text-emerald-800 mb-1.5 flex items-center gap-2">
+                  <span class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 inline-flex items-center justify-center text-xs font-bold">2</span>
+                  現場執行銷帳操作
+                </div>
+                <p class="text-slate-600 leading-relaxed">
+                  協辦核對發票與成本單無誤且完成送件後，<strong>直接在分頁 4 的【已銷帳】欄位點擊勾選</strong>。若有發票退回重開等異常，可直接在本頁填寫備註。
+                </p>
+              </div>
+
+              <div class="bg-white p-4 rounded-xl border border-emerald-100 shadow-2xs">
+                <div class="font-bold text-emerald-800 mb-1.5 flex items-center gap-2">
+                  <span class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 inline-flex items-center justify-center text-xs font-bold">3</span>
+                  自動移出消單 ＆ 回寫分頁3
+                </div>
+                <p class="text-slate-600 leading-relaxed">
+                  一旦勾選，該筆資料<strong>立即自分頁 4 移出消單</strong>，同時系統<strong>自動將【已銷帳 = TRUE】同步回寫至分頁 3 總母帳</strong>，兼顧操作流暢度與歷史完整性。
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 分頁 4 欄位結構一覽條 (精簡版) -->
+          <div class="border border-slate-200 rounded-xl p-4 bg-slate-50">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                <i class="fa-solid fa-table-list text-emerald-600"></i> 分頁 4 欄位清單（全部自「分頁 3」自動鏡像呈現，僅保留未銷項目）：
+              </span>
+              <span class="text-[11px] text-emerald-700 font-semibold bg-emerald-100/70 px-2 py-0.5 rounded">
+                在分頁4直接操作 ➔ 自動消單
+              </span>
+            </div>
+            <div class="flex flex-wrap gap-2 text-xs">
+              <span class="px-2.5 py-1 rounded bg-emerald-500 text-white font-bold flex items-center gap-1">
+                <i class="fa-solid fa-square-check"></i> 已銷帳 (主要操作核取方塊)
+              </span>
+              <span class="px-2.5 py-1 rounded bg-white text-slate-700 border border-slate-200">發票開立日</span>
+              <span class="px-2.5 py-1 rounded bg-white text-slate-700 border border-slate-200">公司名稱</span>
+              <span class="px-2.5 py-1 rounded bg-white text-slate-700 border border-slate-200">發票編號</span>
+              <span class="px-2.5 py-1 rounded bg-white text-slate-700 border border-slate-200">編碼</span>
+              <span class="px-2.5 py-1 rounded bg-white text-slate-700 border border-slate-200">走期與案名</span>
+              <span class="px-2.5 py-1 rounded bg-white text-slate-700 border border-slate-200">發票金額</span>
+              <span class="px-2.5 py-1 rounded bg-white text-slate-700 border border-slate-200">業務</span>
+              <span class="px-2.5 py-1 rounded bg-white text-slate-700 border border-slate-200">傭金%數</span>
+              <span class="px-2.5 py-1 rounded bg-white text-slate-700 border border-slate-200">傭金發票金額</span>
+              <span class="px-2.5 py-1 rounded bg-white text-slate-700 border border-slate-200">支票/匯款金額</span>
+              <span class="px-2.5 py-1 rounded bg-indigo-50 text-indigo-800 border border-indigo-200 font-semibold">備註</span>
+            </div>
+          </div>
+
+          <!-- ★ 新增：分頁四操作與帶回分頁三核心連動邏輯 (Flowchart & Rules) -->
+          <div class="border-2 border-emerald-300 rounded-2xl p-5 sm:p-6 bg-emerald-50/30 space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-emerald-200 pb-4">
+              <div>
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="px-2 py-0.5 rounded bg-emerald-700 text-white text-xs font-bold">核心控制邏輯</span>
+                  <span class="text-xs text-emerald-800 font-semibold font-mono">onEdit 事件 ➔ 彈窗比對 ➔ 自動回寫</span>
+                </div>
+                <h4 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <i class="fa-solid fa-diagram-project text-emerald-600"></i>
+                  分頁 4 勾選觸發與後端銷帳處理機制 (三大情境)
+                </h4>
+              </div>
+              <button onclick="openSimulationModal()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center gap-2 self-start sm:self-auto hover:shadow-md cursor-pointer">
+                <i class="fa-solid fa-play"></i> 點我體驗「彈窗銷帳」互動模擬
+              </button>
+            </div>
+
+            <!-- 視覺化作業流步驟圖 -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
+              <!-- 步驟 1 -->
+              <div class="bg-white rounded-xl p-3.5 border border-slate-200 shadow-2xs">
+                <div class="flex items-center justify-between mb-1.5">
+                  <span class="w-5 h-5 rounded-full bg-slate-900 text-white text-[10px] font-bold inline-flex items-center justify-center">1</span>
+                  <span class="text-[10px] text-slate-500 font-mono">觸發與防呆</span>
+                </div>
+                <div class="font-bold text-slate-800 mb-1">勾選 A 欄核取方塊</div>
+                <p class="text-slate-500 leading-relaxed text-[11px]">
+                  監聽 <code class="bg-slate-100 px-1 py-0.5 rounded text-slate-700 font-mono">A欄(Col 1)</code> 且列號>1。<br>
+                  <strong class="text-rose-600">防呆檢查：</strong>若 <strong>E 欄 (編碼) 為空</strong>，提示警告並自動取消打勾終止程序。
+                </p>
+              </div>
+
+              <!-- 步驟 2 -->
+              <div class="bg-white rounded-xl p-3.5 border border-slate-200 shadow-2xs">
+                <div class="flex items-center justify-between mb-1.5">
+                  <span class="w-5 h-5 rounded-full bg-slate-900 text-white text-[10px] font-bold inline-flex items-center justify-center">2</span>
+                  <span class="text-[10px] text-slate-500 font-mono">彈窗與組裝</span>
+                </div>
+                <div class="font-bold text-slate-800 mb-1">開啟自訂 HTML 彈窗</div>
+                <p class="text-slate-500 leading-relaxed text-[11px]">
+                  自動搜尋同公司其他未銷項目組裝併請清單。彈窗供協辦輸入：<strong class="text-slate-700">日期、發票號碼、實收金額</strong>。
+                </p>
+              </div>
+
+              <!-- 步驟 3 -->
+              <div class="bg-white rounded-xl p-3.5 border border-slate-200 shadow-2xs">
+                <div class="flex items-center justify-between mb-1.5">
+                  <span class="w-5 h-5 rounded-full bg-slate-900 text-white text-[10px] font-bold inline-flex items-center justify-center">3</span>
+                  <span class="text-[10px] text-slate-500 font-mono">即時動態比對</span>
+                </div>
+                <div class="font-bold text-slate-800 mb-1">比對輸入 vs J 欄金額</div>
+                <p class="text-slate-500 leading-relaxed text-[11px]">
+                  即時比對輸入金額與單據金額：<br>
+                  <span class="text-amber-600 font-semibold">● &lt; 單據額</span>：部分銷帳提示<br>
+                  <span class="text-emerald-600 font-semibold">● = 單據額</span>：正常銷帳提示<br>
+                  <span class="text-blue-600 font-semibold">● &gt; 單據額</span>：展開併請核選區
+                </p>
+              </div>
+
+              <!-- 步驟 4 -->
+              <div class="bg-white rounded-xl p-3.5 border border-slate-200 shadow-2xs">
+                <div class="flex items-center justify-between mb-1.5">
+                  <span class="w-5 h-5 rounded-full bg-slate-900 text-white text-[10px] font-bold inline-flex items-center justify-center">4</span>
+                  <span class="text-[10px] text-slate-500 font-mono">寫入與雙向回寫</span>
+                </div>
+                <div class="font-bold text-slate-800 mb-1">執行 processInvoice</div>
+                <p class="text-slate-500 leading-relaxed text-[11px]">
+                  依照驗證結果執行後端處理：回寫分頁 3 銷帳履歷、扣抵或勾選 A 欄，並將分頁 4 自動消單或紅字粗體留存。
+                </p>
+              </div>
+            </div>
+
+            <!-- 三大金額情境詳細處理規範卡片 -->
+            <div>
+              <div class="text-xs font-bold text-slate-700 mb-3 flex items-center gap-1.5">
+                <i class="fa-solid fa-code-fork text-indigo-600"></i> 後端銷帳核心情境處理規範（完美對應發票一對一、一對多、多對一）：
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+
+                <!-- 情況一：部分銷帳 (多對一) -->
+                <div class="bg-white rounded-xl p-4 border-2 border-amber-300 shadow-sm flex flex-col justify-between">
+                  <div>
+                    <div class="flex items-center justify-between mb-2">
+                      <span class="font-bold text-amber-900 bg-amber-100 px-2 py-0.5 rounded text-[11px]">情況一：拆單 / 部分銷帳</span>
+                      <span class="text-[10px] font-mono text-amber-700 font-bold">輸入金額 &lt; 單據金額</span>
+                    </div>
+                    <div class="text-slate-800 font-bold mb-1.5 flex items-center gap-1">
+                      <i class="fa-solid fa-scissors text-amber-500"></i> 多張發票對應一筆委刊單 (多對一)
+                    </div>
+                    <ul class="space-y-1.5 text-slate-600 text-[11px] list-disc list-inside leading-relaxed">
+                      <li>計算扣抵後剩餘金額：新 G(發票金額)、J(傭金發票金額)、K(支票匯款金額)。</li>
+                      <li>更新<strong>「待銷成本單」G、J、K</strong> 數字，並在 <strong>L 欄 (備註)</strong> 寫入部分銷帳履歷（日期/號碼/金額）。</li>
+                      <li><strong>「未銷成本單」對應列 G、J、K 轉為紅色粗體</strong>，提醒該筆為拆單進行中。</li>
+                      <li><strong>取消 A 欄打勾</strong>，繼續保留該列於未銷清單供下次繼續銷帳。</li>
+                    </ul>
+                  </div>
+                  <div class="mt-3 pt-2.5 border-t border-slate-100 text-[10px] text-amber-800 font-medium">
+                    ✔ 成果：解決多對一需人工手動抄寫影印容易遺漏與金額混淆的痛點。
+                  </div>
+                </div>
+
+                <!-- 情況二：多筆併請 (一對多) -->
+                <div class="bg-white rounded-xl p-4 border-2 border-blue-300 shadow-sm flex flex-col justify-between">
+                  <div>
+                    <div class="flex items-center justify-between mb-2">
+                      <span class="font-bold text-blue-900 bg-blue-100 px-2 py-0.5 rounded text-[11px]">情況二：多筆併請銷帳</span>
+                      <span class="text-[10px] font-mono text-blue-700 font-bold">輸入金額 &gt; 單據金額</span>
+                    </div>
+                    <div class="text-slate-800 font-bold mb-1.5 flex items-center gap-1">
+                      <i class="fa-solid fa-layer-group text-blue-500"></i> 一張發票對應多筆委刊單 (一對多)
+                    </div>
+                    <ul class="space-y-1.5 text-slate-600 text-[11px] list-disc list-inside leading-relaxed">
+                      <li>動態展開同代理商其他未銷單據，由協辦核取勾選併請項目。</li>
+                      <li><strong>嚴格防呆校驗：</strong>若「所選單據傭金總額 ≠ 輸入發票金額」，彈出警告阻擋送出，防止湊錯單據。</li>
+                      <li>校驗通過後，將<strong>「待銷成本單」所有對應項目的 A 欄全數打勾</strong>，並在 L 欄統一寫入「(併請) 已銷帳履歷」。</li>
+                      <li><strong>「未銷成本單」相關項目全部自動取消打勾並移出清單</strong>。</li>
+                    </ul>
+                  </div>
+                  <div class="mt-3 pt-2.5 border-t border-slate-100 text-[10px] text-blue-800 font-medium">
+                    ✔ 成果：一張發票跨多張成本單請款時，批量核銷零時差，總額自動平帳。
+                  </div>
+                </div>
+
+                <!-- 情況三：正常銷帳 (一對一) -->
+                <div class="bg-white rounded-xl p-4 border-2 border-emerald-300 shadow-sm flex flex-col justify-between">
+                  <div>
+                    <div class="flex items-center justify-between mb-2">
+                      <span class="font-bold text-emerald-900 bg-emerald-100 px-2 py-0.5 rounded text-[11px]">情況三：正常單筆銷帳</span>
+                      <span class="text-[10px] font-mono text-emerald-700 font-bold">輸入金額 = 單據金額</span>
+                    </div>
+                    <div class="text-slate-800 font-bold mb-1.5 flex items-center gap-1">
+                      <i class="fa-solid fa-check-double text-emerald-500"></i> 一張發票對應一筆委刊單 (一對一)
+                    </div>
+                    <ul class="space-y-1.5 text-slate-600 text-[11px] list-disc list-inside leading-relaxed">
+                      <li>金額完全相符，即時顯示正常銷帳綠色提示。</li>
+                      <li>點擊確認銷帳後，呼叫 <code class="bg-emerald-50 text-emerald-800 px-1 py-0.5 rounded font-mono">processInvoice</code>。</li>
+                      <li><strong>「待銷成本單」對應項目 A 欄打勾標註 TRUE</strong>，並於 L 欄自動打印銷帳履歷戳記。</li>
+                      <li><strong>「未銷成本單」取消 A 欄打勾</strong>，該列立即移出工作介面，消單完畢。</li>
+                    </ul>
+                  </div>
+                  <div class="mt-3 pt-2.5 border-t border-slate-100 text-[10px] text-emerald-800 font-medium">
+                    ✔ 成果：標準作業一鍵完成，歷程完整回存分頁 3 總母帳供查核。
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- 取消與防呆機制補充 -->
+            <div class="bg-slate-100/80 rounded-xl p-3 text-[11px] text-slate-600 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <i class="fa-solid fa-shield text-slate-500"></i>
+                <span><strong>取消與保護回滾 (Revert)：</strong>若使用者在彈窗點擊「取消」或直接關閉，立即呼叫 <code class="bg-white px-1.5 py-0.5 rounded border border-slate-300 font-mono text-slate-800">revertCheckbox</code> 自動取消 A 欄打勾，避免懸置狀態。</span>
+              </div>
+              <span class="text-emerald-700 font-semibold shrink-0">✔ 確保資料與操作狀態百分之百同步</span>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+    </div>
+
+  </main>
+
+  <!-- 頁尾 -->
+  <footer class="bg-white border-t border-slate-200 py-6 mt-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-2">
+      <div>© 佣金發票核銷與進度追蹤看板系統規劃書</div>
+      <div class="flex items-center gap-4">
+        <span>架構狀態：定案規格</span>
+        <span>適用對象：協辦組 / 業務部 / 財務會計室</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- 互動模擬對話框 Modal (用於查看者體驗三種情境與防呆機制) -->
+  <div id="simulationModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
+      
+      <!-- 彈窗頂部 -->
+      <div class="bg-gradient-to-r from-emerald-600 to-teal-700 px-6 py-4 text-white flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-receipt text-emerald-200"></i>
+          <h3 class="font-bold text-sm">核銷發票輸入視窗 (模擬介面)</h3>
+        </div>
+        <button onclick="closeSimulationModal(false)" class="text-white/80 hover:text-white text-lg cursor-pointer">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- 彈窗內容區 -->
+      <div class="p-6 space-y-4 text-xs">
+        
+        <!-- 當前單據資訊摘要 -->
+        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1">
+          <div class="flex justify-between text-slate-500">
+            <span>廠商：<strong class="text-slate-800">名緯廣告股份有限公司</strong></span>
+            <span>編碼：<strong class="text-indigo-700 font-mono">IO-2026-088</strong></span>
+          </div>
+          <div class="flex justify-between items-center pt-1 border-t border-slate-200">
+            <span class="text-slate-500">本單單據金額 (J 欄 - 傭金發票金額)：</span>
+            <span class="text-emerald-700 font-bold text-sm font-mono" id="mockTargetAmount">$30,000</span>
+          </div>
+        </div>
+
+        <!-- 協辦輸入表單 -->
+        <div class="space-y-3">
+          <div>
+            <label class="block text-slate-700 font-bold mb-1">發票開立日</label>
+            <input type="date" id="inputDate" value="2026-09-08" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-emerald-500 text-xs">
+          </div>
+          <div>
+            <label class="block text-slate-700 font-bold mb-1">佣金發票號碼</label>
+            <input type="text" id="inputInvNo" value="UX-98765432" placeholder="例：AB-12345678" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-emerald-500 text-xs font-mono">
+          </div>
+          <div>
+            <div class="flex justify-between items-center mb-1">
+              <label class="block text-slate-700 font-bold">實收佣金發票金額</label>
+              <div class="flex gap-1.5 text-[10px]">
+                <button onclick="setAmount(15000)" class="px-2 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 cursor-pointer">試 $15,000 (拆單)</button>
+                <button onclick="setAmount(30000)" class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 hover:bg-emerald-200 cursor-pointer">試 $30,000 (正常)</button>
+                <button onclick="setAmount(45000)" class="px-2 py-0.5 rounded bg-blue-100 text-blue-800 hover:bg-blue-200 cursor-pointer">試 $45,000 (併請)</button>
+              </div>
+            </div>
+            <input type="number" id="inputAmount" value="30000" oninput="handleAmountChange()" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-emerald-500 font-mono text-sm font-bold text-slate-800">
+          </div>
+        </div>
+
+        <!-- 動態即時比對反饋框 -->
+        <div id="statusNotice" class="p-3 rounded-xl border transition-all">
+          <!-- 透過 JS 動態注入提示 -->
+        </div>
+
+        <!-- 情況二：併請清單勾選區塊 (預設隱藏，大於單據金額時展開) -->
+        <div id="combinedSection" class="hidden border border-blue-200 rounded-xl p-3 bg-blue-50/50 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-blue-900 flex items-center gap-1.5">
+              <i class="fa-solid fa-list-check"></i> 同代理商其他未銷項目 (請核勾併請單據)：
+            </span>
+            <span class="text-[10px] text-blue-700 font-mono">已選總額: <strong id="selectedTotal" class="text-blue-900">$30,000</strong></span>
+          </div>
+          <div class="space-y-1.5">
+            <label class="flex items-center justify-between p-2 rounded bg-white border border-blue-200 cursor-pointer hover:bg-blue-50/50">
+              <div class="flex items-center gap-2">
+                <input type="checkbox" id="combineItem1" onchange="calcCombinedTotal()" class="w-4 h-4 text-blue-600 rounded">
+                <span class="font-medium text-slate-800">IO-2026-092 (10月特案)</span>
+              </div>
+              <span class="font-mono text-slate-600">$15,000</span>
+            </label>
+            <label class="flex items-center justify-between p-2 rounded bg-white border border-blue-200 cursor-pointer hover:bg-blue-50/50">
+              <div class="flex items-center gap-2">
+                <input type="checkbox" id="combineItem2" onchange="calcCombinedTotal()" class="w-4 h-4 text-blue-600 rounded">
+                <span class="font-medium text-slate-800">IO-2026-095 (10月站內版位)</span>
+              </div>
+              <span class="font-mono text-slate-600">$20,000</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 操作訊息回饋條 (代替 alert) -->
+        <div id="modalAlert" class="hidden p-2.5 rounded-lg bg-rose-100 text-rose-800 text-xs font-semibold border border-rose-200 flex items-center gap-2">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <span id="modalAlertText">警告訊息</span>
+        </div>
+
+      </div>
+
+      <!-- 彈窗按鈕操作區 -->
+      <div class="bg-slate-50 px-6 py-3.5 border-t border-slate-200 flex items-center justify-end gap-2.5">
+        <button onclick="closeSimulationModal(false)" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-200 transition-colors cursor-pointer">
+          取消 (還原勾選)
+        </button>
+        <button onclick="submitProcessInvoice()" class="px-5 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm transition-all cursor-pointer flex items-center gap-1.5">
+          <i class="fa-solid fa-check"></i> 確認銷帳
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    const targetAmt = 30000;
+
+    function openSimulationModal() {
+      document.getElementById('simulationModal').classList.remove('hidden');
+      document.getElementById('inputAmount').value = targetAmt;
+      document.getElementById('combineItem1').checked = false;
+      document.getElementById('combineItem2').checked = false;
+      document.getElementById('modalAlert').classList.add('hidden');
+      handleAmountChange();
+    }
+
+    function closeSimulationModal(isSuccess) {
+      document.getElementById('simulationModal').classList.add('hidden');
+      if (!isSuccess) {
+        showGlobalToast("已呼叫 revertCheckbox：取消 A 欄打勾，未進行銷帳修改。");
+      }
+    }
+
+    function setAmount(val) {
+      document.getElementById('inputAmount').value = val;
+      handleAmountChange();
+    }
+
+    function handleAmountChange() {
+      const inputVal = parseFloat(document.getElementById('inputAmount').value) || 0;
+      const noticeBox = document.getElementById('statusNotice');
+      const combinedSection = document.getElementById('combinedSection');
+      document.getElementById('modalAlert').classList.add('hidden');
+
+      if (inputVal < targetAmt) {
+        // 情況一：部分銷帳
+        combinedSection.classList.add('hidden');
+        noticeBox.className = "p-3 rounded-xl border border-amber-300 bg-amber-50 text-amber-900";
+        noticeBox.innerHTML = `
+          <div class="font-bold flex items-center gap-1.5 mb-1">
+            <i class="fa-solid fa-scissors text-amber-600"></i> 【情況一：部分銷帳 (拆單)】提示
+          </div>
+          <p class="text-[11px] text-amber-800 leading-relaxed">
+            輸入金額少於單據金額 $${targetAmt.toLocaleString()}。確認後將：<br>
+            1. 扣抵後剩餘金額 $${(targetAmt - inputVal).toLocaleString()} 回寫至「待銷成本單」G、J、K 欄並在 L 欄登記履歷。<br>
+            2.「未銷成本單」該列數字將<strong>轉為紅色粗體</strong>，且 A 欄自動取消勾選保留供下次銷帳。
+          </p>
+        `;
+      } else if (inputVal === targetAmt) {
+        // 情況三：正常銷帳
+        combinedSection.classList.add('hidden');
+        noticeBox.className = "p-3 rounded-xl border border-emerald-300 bg-emerald-50 text-emerald-900";
+        noticeBox.innerHTML = `
+          <div class="font-bold flex items-center gap-1.5 mb-1">
+            <i class="fa-solid fa-circle-check text-emerald-600"></i> 【情況三：正常銷帳】提示
+          </div>
+          <p class="text-[11px] text-emerald-800 leading-relaxed">
+            發票金額完全吻合單據金額 $${targetAmt.toLocaleString()}。確認後將：<br>
+            1.「待銷成本單」對應列 A 欄正式打勾 (TRUE) 並記錄已銷帳履歷。<br>
+            2.「未銷成本單」即刻完成消單移出。
+          </p>
+        `;
+      } else {
+        // 情況二：多筆併請
+        combinedSection.classList.remove('hidden');
+        calcCombinedTotal();
+        noticeBox.className = "p-3 rounded-xl border border-blue-300 bg-blue-50 text-blue-900";
+        noticeBox.innerHTML = `
+          <div class="font-bold flex items-center gap-1.5 mb-1">
+            <i class="fa-solid fa-layer-group text-blue-600"></i> 【情況二：多筆併請銷帳】提示
+          </div>
+          <p class="text-[11px] text-blue-800 leading-relaxed">
+            輸入金額大於本單金額！請在下方勾選併請的同公司項目。<br>
+            <strong>防呆檢查：</strong>所有勾選單據總額必須剛好等於輸入金額 $${inputVal.toLocaleString()}。
+          </p>
+        `;
+      }
+    }
+
+    function calcCombinedTotal() {
+      const c1 = document.getElementById('combineItem1').checked ? 15000 : 0;
+      const c2 = document.getElementById('combineItem2').checked ? 20000 : 0;
+      const total = targetAmt + c1 + c2;
+      document.getElementById('selectedTotal').innerText = '$' + total.toLocaleString();
+      return total;
+    }
+
+    function submitProcessInvoice() {
+      const inputVal = parseFloat(document.getElementById('inputAmount').value) || 0;
+      const alertBox = document.getElementById('modalAlert');
+      const alertText = document.getElementById('modalAlertText');
+
+      if (inputVal <= 0) {
+        alertText.innerText = "請輸入有效的實收發票金額！";
+        alertBox.classList.remove('hidden');
+        return;
+      }
+
+      // 情況二校驗：金額 > 單據額時，併請總額必須相符
+      if (inputVal > targetAmt) {
+        const combinedTotal = calcCombinedTotal();
+        if (combinedTotal !== inputVal) {
+          alertText.innerText = `併請總額 ($${combinedTotal.toLocaleString()}) 與輸入發票金額 ($${inputVal.toLocaleString()}) 不符，無法銷帳！`;
+          alertBox.classList.remove('hidden');
+          return;
+        }
+      }
+
+      // 驗證通過，執行銷帳
+      closeSimulationModal(true);
+      let successMsg = "";
+      if (inputVal < targetAmt) {
+        successMsg = `【部分銷帳完成】已扣抵 $${inputVal.toLocaleString()}，剩餘 $${(targetAmt - inputVal).toLocaleString()} 已回寫分頁 3，未銷表轉為紅色粗體留存！`;
+      } else if (inputVal > targetAmt) {
+        successMsg = `【多筆併請銷帳完成】共銷帳 $${inputVal.toLocaleString()}，分頁 3 相關多筆成本單已全數勾選並寫入履歷！`;
+      } else {
+        successMsg = `【正常銷帳完成】$${inputVal.toLocaleString()} 已成功核銷，分頁 3 標註已銷帳，分頁 4 自動消單！`;
+      }
+      showGlobalToast(successMsg);
+    }
+
+    function showGlobalToast(msg) {
+      let toast = document.getElementById('globalToast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'globalToast';
+        toast.className = 'fixed bottom-6 right-6 z-50 px-4 py-3 rounded-xl bg-slate-900 text-white text-xs font-semibold shadow-xl border border-slate-700 flex items-center gap-2 transition-all duration-300';
+        document.body.appendChild(toast);
+      }
+      toast.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400"></i> <span>${msg}</span>`;
+      toast.style.opacity = '1';
+      toast.style.transform = 'translateY(0)';
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(10px)';
+      }, 4000);
+    }
+  </script>
+</body>
+</html>
